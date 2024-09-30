@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin - Adjust Market Hours</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/stylesheet.css') }}"
+    />
+  </head>
+  <body>
+    <div class="topnav">
+      <a href="{{ url_for('index') }}"> Home </a>
+      <a href="{{ url_for('portfolio') }}"> Portfolio </a>
+      <div class="topnav-right">
+        <a href="{{ url_for('login') }}"> Log in </a>
+        <a href="{{ url_for('signup') }}"> Sign Up </a>
+      </div>
+    </div>
+
+    <div class="admin-container">
+      <h1>Adjust Market Hours</h1>
+      <section>
+        <h2>Market Open Hours</h2>
+        <form>
+          <label for="open-hours">Select Open Time:</label>
+          <select id="open-hours">
+            <option value="09:00">09:00 AM</option>
+            <option value="09:30">09:30 AM</option>
+            <option value="10:00">10:00 AM</option>
+            <option value="10:30">10:30 AM</option>
+          </select>
+        </form>
+      </section>
+      <section>
+        <h2>Market Close Hours</h2>
+        <form>
+          <label for="close-hours">Select Close Time:</label>
+          <select id="close-hours">
+            <option value="15:00">03:00 PM</option>
+            <option value="15:30">03:30 PM</option>
+            <option value="16:00">04:00 PM</option>
+            <option value="16:30">04:30 PM</option>
+          </select>
+        </form>
+      </section>
+      <button type="submit">Update Hours</button>
+    </div>
+    <section>
+      <h2>Manage Stocks</h2>
+      <form id="stock-form">
+        <label for="stock-ticker">Stock Ticker:</label>
+        <input
+          type="text"
+          id="stock-ticker"
+          placeholder="Enter stock ticker"
+          required
+        />
+
+        <label for="stock-name">Stock Name:</label>
+        <input
+          type="text"
+          id="stock-name"
+          placeholder="Enter stock name"
+          required
+        />
+
+        <label for="stock-price">Price:</label>
+        <input
+          type="number"
+          id="stock-price"
+          placeholder="Enter stock price"
+          required
+          step="0.01"
+        />
+
+        <label for="stock-quantity">Quantity:</label>
+        <input
+          type="number"
+          id="stock-quantity"
+          placeholder="Enter stock quantity"
+          required
+        />
+
+        <button type="submit">Add/Update Stock</button>
+      </form>
+
+      <h3>Existing Stocks</h3>
+      <table id="stocks-table">
+        <thead>
+          <tr>
+            <th>Ticker</th>
+            <th>Name</th>
+            <th>Price</th>
+            <th>Quantity</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Existing stocks will be populated here -->
+        </tbody>
+      </table>
+    </section>
+    <script>
+      const stockForm = document.getElementById("stock-form");
+      const stocksTable = document
+        .getElementById("stocks-table")
+        .getElementsByTagName("tbody")[0];
+
+      stockForm.addEventListener("submit", function (event) {
+        event.preventDefault();
+
+        const ticker = document.getElementById("stock-ticker").value;
+        const name = document.getElementById("stock-name").value;
+        const price = parseFloat(document.getElementById("stock-price").value);
+        const quantity = parseInt(
+          document.getElementById("stock-quantity").value
+        );
+
+        const newRow = stocksTable.insertRow();
+        newRow.innerHTML = `
+                <td>${ticker}</td>
+                <td>${name}</td>
+                <td>${price.toFixed(2)}</td>
+                <td>${quantity}</td>
+                <td><button onclick="deleteStock(this)">Delete</button></td>
+            `;
+
+        stockForm.reset();
+      });
+
+      function deleteStock(button) {
+        const row = button.parentNode.parentNode;
+        stocksTable.deleteRow(row.rowIndex - 1);
+      }
+    </script>
+    <footer class="footer">
+      Stock Trading Program created by Andrew Foxall, Ken Lai, and Sam Nhean
+    </footer>
+  </body>
+</html>

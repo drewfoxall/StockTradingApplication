@@ -1,0 +1,8 @@
+cryptography
+Flask
+Flask-SQLAlchemy
+Flask-Migrate
+Flask-Login
+mysql-connector-python
+python-dotenv 
+pymysql
