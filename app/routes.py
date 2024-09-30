@@ -1,6 +1,9 @@
-from flask import render_template, jsonify
+from flask import render_template, jsonify, redirect, url_for, flash
+from flask_login import current_user, login_user, logout_user, login_required
 from app import app, db  # Import the 'app' instance from __init__.py
 from sqlalchemy import text
+from app.forms import RegistrationForm
+from app.models import User
 
 @app.route('/')
 def index():
@@ -22,9 +25,15 @@ def market():
 def portfolio():
     return render_template('portfolio.html')
 
-@app.route('/signup')
-def signup():
-    return render_template('signup.html')
+#@app.route('/signup', methods=['GET', 'POST'])  # Assuming your route is named 'signup'
+#def signup():
+    #if current_user.is_authenticated:
+        #return redirect(url_for('index'))
+    #form = RegistrationForm()
+    #if form.validate_on_submit(): 
+
+        # ... (your existing code to handle form submission)
+        #return render_template('signup.html', title='Register', form=form)  # Pass the 'form' object
 
 @app.route('/test_db')
 def test_db():
@@ -35,3 +44,18 @@ def test_db():
     except Exception as e:
         return jsonify({'status': 'error', 'message': f'Database connection failed: {str(e)}'})
 
+@app.route('/signup', methods=['GET', 'POST'])
+def signup():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    form = RegistrationForm()
+    if form.validate_on_submit(): 
+        user = User(Username=form.username.data, Email=form.email.data, FullName=form.fullname.data)
+        user.set_password(form.password.data)
+        db.session.add(user)
+        db.session.commit()
+        flash('Congratulations, you are now a registered user!')
+        return redirect(url_for('login'))
+    else:  # Handle GET requests and failed form validation
+        return render_template('signup.html', title='Register', form=form)
+    return render_template('signup.html', title='Register', form=form)
