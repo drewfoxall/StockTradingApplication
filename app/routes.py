@@ -5,6 +5,7 @@ from sqlalchemy import text
 from app.forms import RegistrationForm
 from app.models import User
 
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -59,3 +60,24 @@ def signup():
     else:  # Handle GET requests and failed form validation
         return render_template('signup.html', title='Register', form=form)
     return render_template('signup.html', title='Register', form=form)
+
+@app.route('/administrator')
+@login_required  # Ensure only logged-in users can access this page
+def admin_page():
+    if not current_user.is_admin:  
+        flash('Access denied: Administrator only.', 'danger')
+        return redirect(url_for('index'))
+    users = get_all_users()  
+    return render_template('admin.html', users=users)
+
+@app.route('/delete_user/<int:user_id>', methods=['POST'])
+@login_required
+def delete_user(user_id):
+    if not current_user.is_admin:
+        flash('Access denied: Administrator only.', 'danger')
+        return redirect(url_for('index'))
+    delete_user_by_id(user_id)  # Call delete function from models
+    flash(f'User {user_id} has been deleted successfully.', 'success')
+    return redirect(url_for('admin_page'))
+
+

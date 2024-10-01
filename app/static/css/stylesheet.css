@@ -64,6 +64,7 @@ body {
 .topnav.gray-background {
   background-color: #4c5760;
 }
+
 /* Hero Page */
 .hero {
   background-color: #141414;
@@ -361,8 +362,33 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 80vh;
   padding: 20px;
+  min-height: 80vh;
+}
+.login-wrapper {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.login-image {
+  width: 600px;
+  height: auto;
+  margin-right: 20px;
+  float: left;
+}
+/* Signup page */
+/* .signup-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  min-height: 80vh;
+} */
+
+#indexstockpicture {
+  max-width: 400px;
+  height: auto;
 }
 .wrapper .remember-forgot {
   display: flex;
@@ -373,7 +399,11 @@ body {
 .indexstockpicture {
   float: left;
 }
-
+.loginpicture {
+  max-width: 600px;
+  max-height: 600px;
+  float: left;
+}
 .remember-forgot label input {
   accent-color: black;
   margin-right: 3px;
@@ -382,6 +412,20 @@ body {
 .remember-forgot a {
   color: black;
   text-decoration: none;
+}
+.signup-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  flex-grow: 1;
+}
+.signuppicture {
+  max-width: 600px;
+  max-height: 600px;
+  padding-top: 50px;
+  float: left;
+  padding-left: 75px;
 }
 .remember-forgot a {
   color: white;
