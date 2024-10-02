@@ -29,6 +29,30 @@ class User(UserMixin, db.Model):
     # Flask-Login integration
     def get_id(self): 
         return str(self.id)  
+class Stock(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    symbol = db.Column(db.String(10), nullable=False)
+    name = db.Column(db.String(128), nullable=False)
+    shares_owned = db.Column(db.Integer, nullable=False)
+    current_price = db.Column(db.DECIMAL(10, 2), nullable=False)
+    total_value = db.Column(db.DECIMAL(10, 2), nullable=False)
+
+    user = db.relationship('User', backref='stocks')
+#Model for deleting a user from database
+def delete_user_by_id(user_id):
+    user = User.query.get(user_id)  # Fetch the user by ID
+    if user:
+        db.session.delete(user)
+        db.session.commit()
+    else:
+        raise ValueError(f'User with id {user_id} not found.')
+
+def get_all_users():
+    return User.query.all()
+#retrieve stocks user has via their ID
+def get_user_stocks(user_id):
+    return Stock.query.filter_by(user_id = user_id).all()
 
 @login.user_loader
 def load_user(id):

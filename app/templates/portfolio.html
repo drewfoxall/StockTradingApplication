@@ -21,6 +21,8 @@
 
     <div class="portfolio-container">
       <h1 class="portfolio-heading">Stock Portfolio</h1>
+
+      {% if stocks %}
       <table class="portfolio-table">
         <thead>
           <tr>
@@ -32,29 +34,20 @@
           </tr>
         </thead>
         <tbody>
+          {% for stock in stocks %}
           <tr>
-            <td>APPL</td>
-            <td>Apple Inc.</td>
-            <td>50</td>
-            <td>$175.00</td>
-            <td>$8,750.00</td>
+            <td>{{ stock.symbol }}</td>
+            <td>{{ stock.name }}</td>
+            <td>{{ stock.shares_owned }}</td>
+            <td>${{ stock.current_price }}</td>
+            <td>${{ stock.total_value }}</td>
           </tr>
-          <tr>
-            <td>TSLA</td>
-            <td>Tesla Inc.</td>
-            <td>20</td>
-            <td>$750.00</td>
-            <td>$15,000.00</td>
-          </tr>
-          <tr>
-            <td>GOOGL</td>
-            <td>Alphabet Inc.</td>
-            <td>10</td>
-            <td>$2,500.00</td>
-            <td>$25,000.00</td>
-          </tr>
+          {% endfor %}
         </tbody>
       </table>
+      {% else %}
+      <p>Your portfolio is empty.</p>
+      {% endif %}
     </div>
 
     <footer class="footer">

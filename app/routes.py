@@ -4,6 +4,7 @@ from app import app, db  # Import the 'app' instance from __init__.py
 from sqlalchemy import text
 from app.forms import RegistrationForm
 from app.models import User
+from app.models import delete_user_by_id, get_all_users,get_user_stocks
 
 
 @app.route('/')
@@ -22,10 +23,17 @@ def login():
 def market():
     return render_template('market.html')
 
-@app.route('/portfolio')
-def portfolio():
-    return render_template('portfolio.html')
 
+@app.route('/portfolio')
+@login_required
+def portfolio():
+    if current_user.is_authenticated:
+        stocks = get_user_stocks(current_user.id)
+        return render_template('portfolio.html', stocks=stocks)
+    else:
+        flash('You need to log in to see your portfolio.', 'warning')
+        return redirect(url_for('login'))
+    
 #@app.route('/signup', methods=['GET', 'POST'])  # Assuming your route is named 'signup'
 #def signup():
     #if current_user.is_authenticated:
@@ -61,6 +69,7 @@ def signup():
         return render_template('signup.html', title='Register', form=form)
     return render_template('signup.html', title='Register', form=form)
 
+# Accessing administrator webpage, should be only accessible via logged in Admin page --- not currently working ---
 @app.route('/administrator')
 @login_required  # Ensure only logged-in users can access this page
 def admin_page():

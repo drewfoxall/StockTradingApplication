@@ -15,6 +15,7 @@ migrate = Migrate(app, db)
 login = LoginManager(app)
 login.login_view = 'login' 
 
+
 # User loader function for Flask-Login
 @login.user_loader
 def load_user(user_id):
