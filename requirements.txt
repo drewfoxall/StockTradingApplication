@@ -1,0 +1,10 @@
+cryptography
+Flask
+Flask-SQLAlchemy
+Flask-Migrate
+Flask-Login
+Flask-WTF
+mysql-connector-python
+python-dotenv 
+pymysql
+WTForms
