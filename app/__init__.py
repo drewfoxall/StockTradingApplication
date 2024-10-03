@@ -17,4 +17,4 @@ login.login_view = 'login'
 
 
 # Import routes
-from app import routes
+from app import routes, models
