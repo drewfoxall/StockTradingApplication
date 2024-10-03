@@ -34,15 +34,6 @@ def portfolio():
         flash('You need to log in to see your portfolio.', 'warning')
         return redirect(url_for('login'))
     
-#@app.route('/signup', methods=['GET', 'POST'])  # Assuming your route is named 'signup'
-#def signup():
-    #if current_user.is_authenticated:
-        #return redirect(url_for('index'))
-    #form = RegistrationForm()
-    #if form.validate_on_submit(): 
-
-        # ... (your existing code to handle form submission)
-        #return render_template('signup.html', title='Register', form=form)  # Pass the 'form' object
 
 @app.route('/test_db')
 def test_db():
@@ -59,7 +50,7 @@ def signup():
         return redirect(url_for('index'))
     form = RegistrationForm()
     if form.validate_on_submit(): 
-        user = User(Username=form.username.data, Email=form.email.data, FullName=form.fullname.data)
+        user = User(user_name=form.username.data, email=form.email.data, full_name=form.fullname.data)
         user.set_password(form.password.data)
         db.session.add(user)
         db.session.commit()
