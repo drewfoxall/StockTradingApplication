@@ -8,12 +8,20 @@
   </head>
   <body>
     <div class="topnav">
-      <a href="{{ url_for('index') }}">Home</a>
-      <a href="{{ url_for('portfolio') }}">Portfolio</a>
+      <a href="{{ url_for('index') }}"> Home </a>
+      <a href="{{ url_for('portfolio') }}"> Portfolio </a>
       <div class="topnav-right">
-        <a href="{{ url_for('login') }}">Log in</a>
-        <a href="{{ url_for('signup') }}">Sign Up</a>
+        {% if current_user.is_authenticated %}
+          <!-- Show Sign Out link when the user is logged in -->
+          <a href="{{ url_for('logout') }}"> Sign Out </a>
+          <a href="{{url_for('market') }}"> Market </a>
+        {% else %}
+          <!-- Show Log in and Sign Up links when the user is not logged in -->
+          <a href="{{ url_for('login') }}"> Log In </a>
+          <a href="{{ url_for('signup') }}"> Sign Up </a>
+        {% endif %}
       </div>
+    </div>
     </div>
     <div class="signup-container">
       <img
@@ -27,13 +35,13 @@
           <h1>Sign Up</h1>
           {{ form.hidden_tag() }}
           <div class="input-box">
-            {{ form.fullname.label }}<br />
-            {{ form.fullname(size=32, class_="form-control") }}
+            {{ form.full_name.label }}<br />
+            {{ form.full_name(size=32, class_="form-control") }}
           </div>
 
           <div class="input-box">
-            {{ form.username.label }}<br />
-            {{ form.username(size=32, class_="form-control") }}
+            {{ form.user_name.label }}<br />
+            {{ form.user_name(size=32, class_="form-control") }}
           </div>
 
           <div class="input-box">

@@ -1,0 +1,16 @@
+<!-- templates/buy_stock.html -->
+{% extends "base.html" %} {% block content %}
+<h1>Buy {{ stock.company_name }} ({{ stock.ticker }})</h1>
+<p>Price: ${{ stock.price }}</p>
+<form method="POST">
+  {{ form.hidden_tag() }}
+  <div>
+    {{ form.quantity.label }} {{ form.quantity(size=10) }} {% for error in
+    form.quantity.errors %}
+    <span style="color: red">[{{ error }}]</span>
+    {% endfor %}
+  </div>
+  <div>{{ form.submit() }}</div>
+</form>
+<a href="{{ url_for('market') }}">Back to Market</a>
+{% endblock %}

@@ -14,10 +14,20 @@
     <div class="topnav">
       <a href="{{ url_for('index') }}"> Home </a>
       <a href="{{ url_for('portfolio') }}"> Portfolio </a>
+      {% if current_user.is_authenticated %}
+      <a href="{{url_for('market') }}"> Market </a>
+      {% endif %}
       <div class="topnav-right">
-        <a href="{{ url_for('login') }}"> Log in </a>
-        <a href="{{ url_for('signup') }}"> Sign Up </a>
+        {% if current_user.is_authenticated %}
+          <!-- Show Sign Out link when the user is logged in -->
+          <a href="{{ url_for('logout') }}"> Sign Out </a>
+        {% else %}
+          <!-- Show Log in and Sign Up links when the user is not logged in -->
+          <a href="{{ url_for('login') }}"> Log In </a>
+          <a href="{{ url_for('signup') }}"> Sign Up </a>
+        {% endif %}
       </div>
+    </div>
     </div>
     <div class="login-container">
       <div class="login-wrapper">
@@ -27,16 +37,37 @@
           class="login-image"
         />
         <div class="wrapper">
-          <form action="">
+          {% with messages = get_flashed_messages() %} {% if messages %}
+          <div class="alert alert-danger">
+            {% for message in messages %}
+            <p>{{ message }}</p>
+            {% endfor %}
+          </div>
+          {% endif %} {% endwith %}
+          <form action="{{ url_for('login') }}" method="POST">
+            {{ form.hidden_tag() }}
+            <!-- This generates the CSRF token -->
             <h1>Login</h1>
             <div class="input-box">
-              <input type="text" placeholder="Username" required />
+              <input
+                type="text"
+                name="username"
+                placeholder="Username"
+                required
+              />
             </div>
             <div class="input-box">
-              <input type="password" placeholder="Password" required />
+              <input
+                type="password"
+                name="password"
+                placeholder="Password"
+                required
+              />
             </div>
             <div class="remember-forgot">
-              <label><input type="checkbox" /> Remember me</label>
+              <label
+                ><input type="checkbox" name="remember_me" /> Remember me</label
+              >
               <a href="#">Forgot Password?</a>
             </div>
             <button type="submit" class="btn">Login</button>
