@@ -1,8 +1,9 @@
-from flask import render_template, jsonify, redirect, url_for, flash
+from flask import render_template, jsonify, redirect, url_for, flash, request
 from flask_login import current_user, login_user, logout_user, login_required
+#from werkzeug.urls import url_parse
 from app import app, db  # Import the 'app' instance from __init__.py
 from sqlalchemy import text
-from app.forms import RegistrationForm
+from app.forms import RegistrationForm, LoginForm
 from app.models import user
 from app.models import delete_user_by_id, get_all_users,get_user_stocks
 
@@ -11,14 +12,23 @@ from app.models import delete_user_by_id, get_all_users,get_user_stocks
 def index():
     return render_template('index.html')
 
-@app.route('/login')
+@app.route('/login', methods=['GET', 'POST'])
 def login():
-    return render_template('login.html')
-
-@app.route('/market')
-def market():
-    return render_template('market.html')
-
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    form = RegistrationForm()
+    if form.validate_on_submit():
+        user_obj = user.query.filter_by(user_name=form.username.data).first()
+        if user_obj is None or not user_obj.check_password(form.password.data):
+            flash('Invalid username or password')
+            return redirect(url_for('login'))
+        login_user(user_obj, remember=form.remember_me.data)
+        next_page = request.args.get('next')
+        if not next_page.netloc != '':
+            next_page = url_for('index') 
+  # Redirect to index if no next page
+        return redirect(next_page)
+    return render_template('login.html', title='Sign In', form=form)
 
 @app.route('/portfolio', methods=['GET', 'POST'])
 @login_required
@@ -29,6 +39,10 @@ def portfolio():
     else:
         flash('You need to log in to see your portfolio.', 'warning')
         return redirect(url_for('login'))
+
+@app.route('/market')
+def market():
+    return render_template('market.html')
     
 @app.route('/test_db')
 def test_db():
