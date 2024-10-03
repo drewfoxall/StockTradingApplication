@@ -27,7 +27,7 @@ class User(UserMixin, db.Model):
     Role = db.Column(db.String(50), nullable=False)
 
 # Relationship to orders
-    order = db.relationship('Order', backref='user')
+    orders = db.relationship('Order', backref='user')
 
 def __repr__(self):
     return f'<User {self.Username}>'
@@ -133,15 +133,36 @@ def __repr__(self):
     # portfolios = db.relationship('Portfolio', backref='user', lazy=True)
     # orders = db.relationship('Order', backref='user', lazy=True) 
 
-    def set_password(self, password):
-        self.PasswordHash = generate_password_hash(password)
+def set_password(self, password):
+    self.PasswordHash = generate_password_hash(password)
 
-    def check_password(self, password):
-        return check_password_hash(self.PasswordHash, password)
+def check_password(self, password):
+    return check_password_hash(self.PasswordHash, password)
 
     # Flask-Login integration
-    def get_id(self): 
-        return str(self.UserID)  
+def get_id(self): 
+    return str(self.UserID)
+
+@property
+def is_admin(self):
+    return self.Role == 'admin'
+
+def delete_user_by_id(UserID):
+    user = User.query.get_or_404(UserID)
+    db.session.delete(user)
+    db.session.commit()
+
+def get_all_users():
+    users = User.query.all()
+    return users
+
+def get_user_stocks(user_id):
+    """
+    Retrieves the stocks owned by a specific user.
+    """
+    # This query joins the Portfolios and Stocks tables to get the stock details for a user
+    query = db.session.query(Stocks, Portfolio.Quantity).join(Portfolio).filter(Portfolio.UserID == user_id)
+    return query.all()
 
 @login.user_loader
 def load_user(id):
