@@ -152,4 +152,4 @@ def get_user_stocks(user_id):
 
 @login.user_loader
 def load_user(user_id):
-    return user_id.query.get(int(user_id))
+    return user.query.get(int(user_id))
