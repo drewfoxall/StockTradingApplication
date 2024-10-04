@@ -1,4 +1,5 @@
 from flask_login import UserMixin
+from datetime import time
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 from app import db, login
@@ -23,6 +24,9 @@ class user(UserMixin, db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
+    @property
+    def is_admin(self):
+        return self.role == 'admin'
 
 # Relationship to orders
     order = db.relationship('order', backref='user')
@@ -31,10 +35,6 @@ class user(UserMixin, db.Model):
 
     def get_id(self): 
         return str(self.user_id)
-
-    @property
-    def is_admin(self):
-        return self.role == 'admin'
 
     def __repr__(self):
         return f'<user {self.user_name}>'
@@ -65,10 +65,18 @@ class market_setting(db.Model):
     __tablename__ = 'market_setting'  # Define the table name
 
     market_setting_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    opening_time = db.Column(db.Time, nullable=False)
-    closing_time = db.Column(db.Time, nullable=False)
-    trading_days = db.Column(db.String(50), nullable=False)  # You may want to adjust the type based on your needs
-    holidays = db.Column(db.String(255), nullable=True)  # Can store holidays as a string (comma-separated, JSON, etc.)
+    is_market_open = db.Column(db.Boolean, default=False)
+    opening_time = db.Column(db.Time, nullable=False, default=time(9, 0))
+    closing_time = db.Column(db.Time, nullable=False, default=time(16, 0))
+    trading_days = db.Column(db.String(50), nullable=False, default='1,2,3,4,5')  # You may want to adjust the type based on your needs
+    holidays = db.Column(db.Text, nullable=True)  # Can store holidays as a string (comma-separated, JSON, etc.)
+
+    def __init__(self):
+        self.is_market_open = False
+        self.opening_time = time(9, 0)
+        self.closing_time = time(16, 0)
+        self.trading_days = '1,2,3,4,5'
+        self.holidays = '[]'  # Empty JSON array as string
 
     def __repr__(self):
         return f'<market_setting {self.market_setting_id}: {self.opening_time} - {self.closing_time}>'
@@ -148,7 +156,20 @@ def get_user_stocks(user_id):
     """
     # This query joins the portfolio and stock tables to get the stock details for a user
     query = db.session.query(stock, portfolio.quantity).join(portfolio).filter(portfolio.user_id == user_id)
-    return query.all()
+    user_stocks = query.all()  # Execute the query and get the results
+
+    # Create a list of dictionaries to store the stock information
+    stock_list = []
+    for stock_obj, quantity in user_stocks:
+        stock_info = {
+            'ticker': stock_obj.ticker,
+            'company_name': stock_obj.company_name,
+            'quantity': quantity,
+            'price': stock_obj.price
+        }
+        stock_list.append(stock_info)
+
+    return stock_list  # Return the list of dictionaries
 
 @login.user_loader
 def load_user(user_id):

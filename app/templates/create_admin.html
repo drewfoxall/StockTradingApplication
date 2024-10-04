@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <h1>Create New Administrator</h1>
+    <form method="POST" action="{{ url_for('create_admin') }}">
+        {{ form.csrf_token }}
+        <div class="form-group">
+            {{ form.username.label }}
+            {{ form.username(class="form-control") }}
+        </div>
+        <div class="form-group">
+            {{ form.email.label }}
+            {{ form.email(class="form-control") }}
+        </div>
+        <div class="form-group">
+            {{ form.password.label }}
+            {{ form.password(class="form-control") }}
+        </div>
+        <button type="submit" class="btn btn-primary">Create Admin</button>
+    </form>
+</div>
+{% endblock %}

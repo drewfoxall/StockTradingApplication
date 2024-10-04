@@ -1,67 +1,162 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>My Stock Portfolio - Stock Trading Platform</title>
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='css/stylesheet.css') }}"
-    />
-  </head>
-  <body>
-    <div class="topnav">
-      <a href="{{ url_for('index') }}"> Home </a>
-      <a href="{{ url_for('portfolio') }}"> Portfolio </a>
-      {% if current_user.is_authenticated %}
-      <a href="{{url_for('market') }}"> Market </a>
-      {% endif %}
-      <div class="topnav-right">
-        {% if current_user.is_authenticated %}
-          <!-- Show Sign Out link when the user is logged in -->
-          <a href="{{ url_for('logout') }}"> Sign Out </a>
-        {% else %}
-          <!-- Show Log in and Sign Up links when the user is not logged in -->
-          <a href="{{ url_for('login') }}"> Log In </a>
-          <a href="{{ url_for('signup') }}"> Sign Up </a>
-        {% endif %}
-      </div>
-    </div>
-    </div>
-
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Portfolio</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+        }
+        .portfolio-container {
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+        .portfolio-heading {
+            text-align: center;
+            color: #333;
+        }
+        h2 {
+            color: #555;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background-color: #45a049;
+        }
+        input[type="number"] {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin: 5px 0;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
     <div class="portfolio-container">
-      <h1 class="portfolio-heading">Stock Portfolio</h1>
+        <h1 class="portfolio-heading">Stock Portfolio</h1>
+        <h3>Your cash balance: {{ current_user.cash_balance }}</h3>
 
-      {% if stocks %}
-      <table class="portfolio-table">
-        <thead>
-          <tr>
-            <th>Stock Symbol</th>
-            <th>Stock Name</th>
-            <th>Shares Owned</th>
-            <th>Current Price</th>
-            <th>Total Value</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for stock in stocks %}
-          <tr>
-            <td>{{ stock.symbol }}</td>
-            <td>{{ stock.name }}</td>
-            <td>{{ stock.shares_owned }}</td>
-            <td>${{ stock.current_price }}</td>
-            <td>${{ stock.total_value }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-      {% else %}
-      <p>Your portfolio is empty.</p>
-      {% endif %}
+        <h2>Deposit Cash (whole dollars only)</h2>
+        <form action="{{ url_for('deposit_cash') }}" method="POST">
+            <input type="number" name="amount" placeholder="Enter amount (whole dollars)" required />
+            <button type="submit" class="btn">Deposit</button>
+        </form>
+
+        <h2>Withdraw Cash (whole dollars only)</h2>
+        <form action="{{ url_for('withdraw_cash') }}" method="POST">
+            <input type="number" name="amount" placeholder="Enter amount (whole dollars)" required />
+            <button type="submit" class="btn">Withdraw</button>
+        </form>
+
+        <h2>Buy Stocks</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Stock Symbol</th>
+                    <th>Stock Name</th>
+                    <th>Current Price</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for stock in stocks %}  <tr>
+                    <td>{{ stock.ticker }}</td>
+                    <td>{{ stock.company_name }}</td>
+                    <td>{{ stock.price }}</td>
+                    <td>
+                        <form action="{{ url_for('buy_stock', stock_id=stock.stock_id) }}" method="POST">
+                            <input type="number" name="quantity" placeholder="Quantity" required />
+                            <button type="submit" class="btn">Buy</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <h2>Sell Stocks</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Stock Symbol</th>
+                    <th>Stock Name</th>
+                    <th>Current Price</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for stock in stock %}  
+                <tr>
+                    <td>{{ stock.ticker }}</td>
+                    <td>{{ stock.company_name }}</td>
+                    <td>{{ stock.price }}</td>
+                    <td>
+                        <form action="{{ url_for('sell_stock', stock_id=stock.stock_id) }}" method="POST">
+                            <input type="number" name="quantity" placeholder="Quantity" required />
+                            <button type="submit" class="btn">Sell</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <h2>Your Stocks</h2>
+        {% if stock %}  
+        <table class="portfolio-table">
+            <thead>
+                <tr>
+                    <th>Stock Symbol</th>
+                    <th>Stock Name</th>
+                    <th>Shares Owned</th>
+                    <th>Current Price</th>
+                    <th>Total Value</th> 
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in stock %}  
+                <tr>
+                    <td>{{ item.ticker }}</td> 
+                    <td>{{ item.company_name }}</td> 
+                    <td>{{ item.quantity }}</td> 
+                    <td>{{ item.price }}</td> 
+                    <td>{{ item.price * item.quantity }}</td> 
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>You don't own any stocks yet.</p>
+        {% endif %}
     </div>
-
-    <footer class="footer">
-      Stock Trading Program created by Andrew Foxall, Ken Lai, and Sam Nhean
-    </footer>
-  </body>
+</body>
 </html>
