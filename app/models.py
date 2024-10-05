@@ -94,7 +94,7 @@ class order(db.Model):
     quantity = db.Column(db.Integer, nullable=False)
     price = db.Column(db.DECIMAL(10, 2), nullable=False)
     status = db.Column(db.String(20), nullable=False)  # e.g., 'pending', 'completed', 'canceled'
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    time_stamp = db.Column(db.DateTime, default=datetime.utcnow)
 
     def __repr__(self):
         return f'<order {self.order_id}: {self.type} {self.quantity} of stock {self.stock_id} by user {self.user_id}>'
@@ -111,7 +111,7 @@ class transaction(db.Model):
     type = db.Column(db.String(10), nullable=False)  # e.g., 'buy' or 'sell'
     quantity = db.Column(db.Integer, nullable=False)
     price = db.Column(db.DECIMAL(10, 2), nullable=False)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    time_stamp = db.Column(db.DateTime, default=datetime.utcnow)
 
     def __repr__(self):
         return f'<transaction {self.transaction_id}: {self.type} {self.quantity} of stock {self.stock_id} by User {self.user_id}>'
@@ -142,9 +142,12 @@ class portfolio(db.Model):
     # Flask-Login integration
 
 def delete_user_by_id(user_id):
-    user = user.query.get_or_404(user_id)
-    db.session.delete(user)
-    db.session.commit()
+    user = user.query.get(user_id)  # Ensure 'User' is the correct model name
+    if user:
+        db.session.delete(user)
+        db.session.commit()
+        return True
+    return False
 
 def get_all_users():
     users = user.query.all()
@@ -170,6 +173,26 @@ def get_user_stocks(user_id):
         stock_list.append(stock_info)
 
     return stock_list  # Return the list of dictionaries
+
+def is_market_open():
+    """Check if the market is currently open"""
+    from datetime import datetime
+    setting = market_setting.query.first()
+    if not setting:
+        return False
+    
+    now = datetime.now().time()
+    
+    if now < setting.opening_time or now > setting.closing_time:
+        return False
+
+    # Check if today is a trading day (Monday is 0, Sunday is 6)
+    today = datetime.now().weekday()
+    trading_days = list(map(int, setting.trading_days.split(',')))  # Convert to list of integers
+    if today + 1 not in trading_days:  # Adjust today's index to match your format (1-7)
+        return False
+
+    return True
 
 @login.user_loader
 def load_user(user_id):
