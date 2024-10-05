@@ -13,7 +13,6 @@ from datetime import time
 @app.route('/')
 def index():
     return render_template('index.html')
-
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
@@ -83,6 +82,7 @@ def update_market_hours():
             
         # Get data from request
         data = request.get_json()
+        print(data)
         
         # Parse the time strings into time objects
         # Assuming time is sent in format "HH:MM"
@@ -93,6 +93,13 @@ def update_market_hours():
         if 'closing_time' in data:
             hours, minutes = map(int, data['closing_time'].split(':'))
             setting.closing_time = time(hours, minutes)
+
+        if 'trading_days' in data:
+            # Check if trading_days is a list and handle accordingly
+            if isinstance(data['trading_days'], list):
+                setting.trading_days = ','.join(data['trading_days'])
+            else:
+                setting.trading_days = data['trading_days']   
         
         # Commit the changes to database
         db.session.commit()
@@ -100,7 +107,8 @@ def update_market_hours():
         return jsonify({
             'message': 'Market hours updated successfully',
             'opening_time': setting.opening_time.strftime('%H:%M'),
-            'closing_time': setting.closing_time.strftime('%H:%M')
+            'closing_time': setting.closing_time.strftime('%H:%M'),
+            'trading_days': setting.trading_days
         })
         
     except Exception as e:
@@ -110,9 +118,10 @@ def update_market_hours():
 @app.route('/buy_stock/<int:stock_id>', methods=['GET', 'POST'])
 @login_required
 def buy_stock(stock_id):
-    if not is_market_open():
-        flash('Market is currently closed', 'danger')
-        return redirect(url_for('market'))
+    #if not is_market_open():
+        #flash('Market is currently closed', 'danger')
+        #return redirect(url_for('market'))
+    
     if request.method == 'POST':
         try:
             quantity = int(request.form['quantity'])
@@ -120,30 +129,24 @@ def buy_stock(stock_id):
                 flash('Please enter a positive quantity', 'danger')
                 return redirect(url_for('market'))
 
-            stock_to_buy = stock.query.get_or_404(stock_id)
+            # Store the reference to avoid any potential variable shadowing
+            Stock = stock  # Capital S to avoid any naming conflicts
+            stock_to_buy = Stock.query.get_or_404(stock_id)
             total_cost = quantity * stock_to_buy.price
 
-            # Check if user has enough cash
             if current_user.cash_balance < total_cost:
                 flash('Insufficient funds for this purchase', 'danger')
                 return redirect(url_for('market'))
 
-            # Check if enough stock volume is available
             if stock_to_buy.volume < quantity:
                 flash('Not enough shares available for purchase', 'danger')
                 return redirect(url_for('market'))
 
-            # Create transaction record (if applicable)
-            # ... your transaction code ...
-
-            # Update user's cash balance
             current_user.cash_balance -= total_cost
-
-            # Update stock volume
             stock_to_buy.volume -= quantity
 
-            # Update or create portfolio entry
-            portfolio_entry = portfolio.query.filter_by(
+            Portfolio = portfolio  # Similarly store reference to portfolio model
+            portfolio_entry = Portfolio.query.filter_by(
                 user_id=current_user.user_id,
                 stock_id=stock_id
             ).first()
@@ -151,7 +154,7 @@ def buy_stock(stock_id):
             if portfolio_entry:
                 portfolio_entry.quantity += quantity
             else:
-                new_portfolio_entry = portfolio(
+                new_portfolio_entry = Portfolio(
                     user_id=current_user.user_id,
                     stock_id=stock_id,
                     quantity=quantity
@@ -160,15 +163,15 @@ def buy_stock(stock_id):
 
             db.session.commit()
             flash(f'Successfully purchased {quantity} shares for ${total_cost}', 'success')
+            return redirect(url_for('market'))
 
         except ValueError:
             flash('Invalid quantity', 'danger')
-            return redirect(url_for('market'))
         except Exception as e:
+            print(f"Exception occurred: {str(e)}")  # Keep this debug print
             db.session.rollback()
             flash(f'Error processing purchase: {str(e)}', 'danger')
-            return redirect(url_for('market'))
-
+        
     return redirect(url_for('market'))
 
 @app.route('/sell_stock/<int:stock_id>', methods=['POST'])

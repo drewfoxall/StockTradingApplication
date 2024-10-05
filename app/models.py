@@ -51,9 +51,9 @@ class stock(db.Model):
     volume = db.Column(db.Integer, nullable=False)
     price = db.Column(db.DECIMAL(10, 2), nullable=False)
 
-    order = db.relationship('order', backref='stock')
-    transaction = db.relationship('transaction', backref='stock')
-    portfolio = db.relationship('portfolio', backref='stock')
+    stock_orders = db.relationship('order', backref='stock_ref')
+    stock_transactions = db.relationship('transaction', backref='stock_ref')
+    stock_portfolios = db.relationship('portfolio', backref='stock_ref')
 
     def __repr__(self):             # Method useful for debugging and logging
         return f'<stock {self.ticker}: {self.company_name}>'
@@ -174,18 +174,27 @@ def get_user_stocks(user_id):
 
 def is_market_open():
     """Check if the market is currently open"""
-    from datetime import datetime
+    
     setting = market_setting.query.first()
     if not setting:
         return False
-    
-    now = datetime.now().time()
-    
-    if now < setting.opening_time or now > setting.closing_time:
+
+    now = datetime.now()
+    current_time = now.time()
+
+    # More robust time comparison
+    if setting.opening_time < setting.closing_time:
+        is_open = setting.opening_time <= current_time <= setting.closing_time
+    else:  # Handle cases where closing time is after midnight
+        is_open = current_time >= setting.opening_time or current_time <= setting.closing_time
+
+    if not is_open:
         return False
 
     # Check if today is a trading day (Monday is 0, Sunday is 6)
     today = datetime.now().weekday()
+    if not setting.trading_days:  # Check if trading_days is empty or None
+        return False  # Or handle it differently, e.g., set a default
     trading_days = list(map(int, setting.trading_days.split(',')))  # Convert to list of integers
     if today + 1 not in trading_days:  # Adjust today's index to match your format (1-7)
         return False

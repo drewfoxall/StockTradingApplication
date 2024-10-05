@@ -76,11 +76,42 @@
         <form id="marketHoursForm" method="POST" action="{{ url_for('update_market_hours') }}">
             <div>
                 <label for="opening_time">Opening Time:</label>
-                <input type="time" id="opening_time" name="opening_time" required>
+                <input type="time" id="opening_time" name="opening_time" value="{{ market_settings.opening_time.strftime('%H:%M') }}" required>
             </div>
             <div>
                 <label for="closing_time">Closing Time:</label>
-                <input type="time" id="closing_time" name="closing_time" required>
+                <input type="time" id="closing_time" name="closing_time" value="{{ market_settings.closing_time.strftime('%H:%M') }}" required>
+            </div>
+            <div>
+                <label for="trading_days">Trading Days:</label>
+                <div>
+                    <input type="checkbox" id="monday" name="trading_days" value="1" {% if "1" in market_settings.trading_days.split(',') %}checked{% endif %}>
+                    <label for="monday">Monday</label>
+                </div>
+                <div>
+                    <input type="checkbox" id="tuesday" name="trading_days" value="2" {% if "2" in market_settings.trading_days.split(',') %}checked{% endif %}>
+                    <label for="tuesday">Tuesday</label>
+                </div>
+                <div>
+                    <input type="checkbox" id="wednesday" name="trading_days" value="3" {% if "3" in market_settings.trading_days.split(',') %}checked{% endif %}>
+                    <label for="wednesday">Wednesday</label>
+                </div>
+                <div>
+                    <input type="checkbox" id="thursday" name="trading_days" value="4" {% if "4" in market_settings.trading_days.split(',') %}checked{% endif %}>
+                    <label for="thursday">Thursday</label>
+                </div>
+                <div>
+                    <input type="checkbox" id="friday" name="trading_days" value="5" {% if "5" in market_settings.trading_days.split(',') %}checked{% endif %}>
+                    <label for="friday">Friday</label>
+                </div>
+                <div>
+                    <input type="checkbox" id="saturday" name="trading_days" value="6" {% if "6" in market_settings.trading_days.split(',') %}checked{% endif %}>
+                    <label for="saturday">Saturday</label>
+                </div>
+                <div>
+                    <input type="checkbox" id="sunday" name="trading_days" value="7" {% if "7" in market_settings.trading_days.split(',') %}checked{% endif %}>
+                    <label for="sunday">Sunday</label>
+                </div>
             </div>
             <button type="submit">Update Hours</button>
         </form>
@@ -164,32 +195,27 @@
     </footer>
 </body>
 <script>
-    document.getElementById('marketHoursForm').addEventListener('submit', function(event) {
-        event.preventDefault(); // Prevent default form submission
-    
-        const form = event.target;
-        const formData = new FormData(form);
-        const   
-     data = {};
-        formData.forEach((value, key) => (data[key] = value));
-    
-        fetch(form.action, {
+    document.getElementById('marketHoursForm').onsubmit = function(event) {
+        event.preventDefault();
+        const opening_time = document.getElementById('opening_time').value;
+        const closing_time = document.getElementById('closing_time').value;
+        const checkboxes = document.querySelectorAll('input[name="trading_days"]:checked');
+        const trading_days = Array.from(checkboxes).map(cb => cb.value);
+
+        fetch('/update_market_hours', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
+                'Content-Type': 'application/json'
             },
-            body: JSON.stringify(data),
+            body: JSON.stringify({
+                opening_time: opening_time,
+                closing_time: closing_time,
+                trading_days: trading_days
+            })
         })
         .then(response => response.json())
-        .then(data => {
-            // Handle the response from the server, e.g., display a success message
-            console.log('Success:', data);
-            alert('Market hours updated successfully!');
-        })
-        .catch((error) => {
-            console.error('Error:', error);
-            alert('Error updating market hours. Please try again.');
-        });
-    });
+        .then(data => console.log(data))
+        .catch(error => console.error('Error:', error));
+    }
 </script>
 </html>
