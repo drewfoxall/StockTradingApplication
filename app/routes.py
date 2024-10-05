@@ -4,7 +4,7 @@ from app import app, db  # Import the 'app' instance from __init__.py
 from sqlalchemy import text
 from app.forms import RegistrationForm, LoginForm, PurchaseForm, AdminCreationForm
 from urllib.parse import urlparse
-from app.models import user, delete_user_by_id, get_all_users, get_user_stocks, stock, order, transaction, market_setting, is_market_open
+from app.models import user, delete_user_by_id, get_all_users, get_user_stocks, stock, order, transaction, market_setting, is_market_open, portfolio
 from flask_wtf import FlaskForm
 from decimal import Decimal
 from datetime import time
