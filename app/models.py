@@ -1,11 +1,18 @@
 from flask_login import UserMixin
 from datetime import time
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime
+from datetime import datetime, timedelta
 from app import db, login
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import DECIMAL
 
+# List of major holidays (MM-DD format)
+holidays = [
+    '01-01',  # New Year's Day
+    '07-04',  # Independence Day
+    '12-25',  # Christmas Day
+    # Add more holidays here
+]
 class user(UserMixin, db.Model):
  
     __tablename__ = 'user'
@@ -197,6 +204,10 @@ def is_market_open():
         return False  # Or handle it differently, e.g., set a default
     trading_days = list(map(int, setting.trading_days.split(',')))  # Convert to list of integers
     if today + 1 not in trading_days:  # Adjust today's index to match your format (1-7)
+        return False
+       # Check if today is a holiday
+    today_date = datetime.now().strftime('%m-%d')
+    if today_date in holidays:
         return False
 
     return True
