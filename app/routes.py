@@ -49,8 +49,8 @@ def portfolio():
         user_stocks = get_user_stocks(current_user.get_id())
         all_stocks = stock.query.all()
         return render_template('portfolio.html',
-            stock=user_stocks,
-            stocks=all_stocks,
+            user_stock=user_stocks,
+            all_stocks=all_stocks,
             is_market_open=is_market_open()
             )
     else:
@@ -64,8 +64,8 @@ def market():
         user_stocks = get_user_stocks(current_user.get_id())
         all_stocks = stock.query.all()
         return render_template('market.html',
-            stock=user_stocks,
-            stocks=all_stocks,
+            user_stocks=user_stocks,
+            all_stocks=all_stocks,
             is_market_open=is_market_open()
             )
     else:

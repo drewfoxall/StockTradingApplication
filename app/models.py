@@ -122,12 +122,10 @@ class portfolio(db.Model):
     """
     __tablename__ = 'portfolio'  # Define the table name
 
-    user_id = db.Column(db.Integer, db.ForeignKey('user.user_id'))  # No longer primary key here
+    portfolio_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.user_id'), nullable=False)  # No longer primary key here
     stock_id = db.Column(db.Integer, db.ForeignKey('stock.stock_id'), nullable=False)  # Foreign key
     quantity = db.Column(db.Integer, nullable=False)
-    
-    __table_args__ = (db.PrimaryKeyConstraint('user_id', 'stock_id'),)  # Composite primary key
-
     def __repr__(self):
         return f'<portfolio user {self.user_id}: stock {self.stock_id} - quantity {self.quantity}>'
 
