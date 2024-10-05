@@ -55,7 +55,7 @@ def portfolio():
             )
     else:
         flash('You need to log in to see your portfolio.', 'warning')
-        return redirect(url_for('login'))
+        return redirect(url_for('portfolio'))
 
 @app.route('/market')
 @login_required
@@ -70,7 +70,7 @@ def market():
             )
     else:
         flash('You need to log in to see the market.', 'warning')
-        return redirect(url_for('login'))
+        return redirect(url_for('market'))
 
 @app.route('/update_market_hours', methods=['POST'])
 def update_market_hours():
@@ -107,12 +107,211 @@ def update_market_hours():
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
+@app.route('/buy_stock/<int:stock_id>', methods=['GET', 'POST'])
+@login_required
+def buy_stock(stock_id):
+    if not is_market_open():
+        flash('Market is currently closed', 'danger')
+        return redirect(url_for('market'))
+    if request.method == 'POST':
+        try:
+            quantity = int(request.form['quantity'])
+            if quantity <= 0:
+                flash('Please enter a positive quantity', 'danger')
+                return redirect(url_for('market'))
+
+            stock_to_buy = stock.query.get_or_404(stock_id)
+            total_cost = quantity * stock_to_buy.price
+
+            # Check if user has enough cash
+            if current_user.cash_balance < total_cost:
+                flash('Insufficient funds for this purchase', 'danger')
+                return redirect(url_for('market'))
+
+            # Check if enough stock volume is available
+            if stock_to_buy.volume < quantity:
+                flash('Not enough shares available for purchase', 'danger')
+                return redirect(url_for('market'))
+
+            # Create transaction record (if applicable)
+            # ... your transaction code ...
+
+            # Update user's cash balance
+            current_user.cash_balance -= total_cost
+
+            # Update stock volume
+            stock_to_buy.volume -= quantity
+
+            # Update or create portfolio entry
+            portfolio_entry = portfolio.query.filter_by(
+                user_id=current_user.user_id,
+                stock_id=stock_id
+            ).first()
+
+            if portfolio_entry:
+                portfolio_entry.quantity += quantity
+            else:
+                new_portfolio_entry = portfolio(
+                    user_id=current_user.user_id,
+                    stock_id=stock_id,
+                    quantity=quantity
+                )
+                db.session.add(new_portfolio_entry)
+
+            db.session.commit()
+            flash(f'Successfully purchased {quantity} shares for ${total_cost}', 'success')
+
+        except ValueError:
+            flash('Invalid quantity', 'danger')
+            return redirect(url_for('market'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error processing purchase: {str(e)}', 'danger')
+            return redirect(url_for('market'))
+
+    return redirect(url_for('market'))
+
+@app.route('/sell_stock/<int:stock_id>', methods=['POST'])
+@login_required
+def sell_stock(stock_id):
+    if not is_market_open():
+        flash('Market is currently closed', 'danger')
+        return redirect(url_for('market'))
+    if request.method == 'POST':
+        try:
+            quantity = int(request.form['quantity'])
+            if quantity <= 0:
+                flash('Please enter a positive quantity', 'danger')
+                return redirect(url_for('market'))
+
+            # Get the stock and portfolio entry
+            stock_to_sell = stock.query.get_or_404(stock_id)
+            portfolio_entry = portfolio.query.filter_by(
+                user_id=current_user.user_id,
+                stock_id=stock_id
+            ).first()
+
+            if not portfolio_entry:
+                flash('You do not own this stock', 'danger')
+                return redirect(url_for('market'))
+
+            if portfolio_entry.quantity < quantity:
+                flash('You do not own enough shares to sell', 'danger')
+                return redirect(url_for('market'))
+
+            # Calculate sale proceeds
+            sale_proceeds = quantity * stock_to_sell.price
+
+            # Update portfolio
+            portfolio_entry.quantity -= quantity
+            if portfolio_entry.quantity == 0:
+                db.session.delete(portfolio_entry)
+            
+            # Update user's cash balance
+            current_user.cash_balance += sale_proceeds
+
+            # Create transaction record
+            new_transaction = transaction(
+                user_id=current_user.user_id,
+                stock_id=stock_id,
+                type='sell',
+                quantity=quantity,
+                price=stock_to_sell.price
+            )
+            db.session.add(new_transaction)
+
+            # Update stock volume
+            stock_to_sell.volume += quantity
+
+            db.session.commit()
+            flash(f'Successfully sold {quantity} shares for ${sale_proceeds}', 'success')
+
+        except ValueError:
+            flash('Invalid quantity', 'danger')
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error processing sale: {str(e)}', 'danger')
+            
+    return redirect(url_for('market'))
+
+@app.route('/deposit_cash', methods=['POST'])
+@login_required
+def deposit_cash():
+    if request.method == 'POST':
+        amount = Decimal(request.form['amount'])
+        current_user.cash_balance += amount
+        db.session.commit()
+        flash('Cash deposited successfully!', 'success')
+    return redirect(url_for('portfolio'))
+
+@app.route('/withdraw_cash', methods=['POST'])
+@login_required
+def withdraw_cash():
+    if request.method == 'POST':
+        amount = Decimal(request.form['amount'])
+        current_user.cash_balance -= amount
+        db.session.commit()
+        flash('Cash withdrawn successfully!', 'success')
+    return redirect(url_for('portfolio'))
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()  # This logs out the user
+    flash('You have been logged out successfully.', 'success')
+    return redirect(url_for('login'))  # Redirect to the home page after logging out
+
+@app.route('/test_db')
+def test_db():
+    try:
+        # Attempt a simple query to check the connection
+        db.session.execute(text('SELECT 1')) 
+        return jsonify({'status': 'success', 'message': 'Database connection successful!'})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': f'Database connection failed: {str(e)}'})
+
+@app.route('/signup', methods=['GET', 'POST'])
+def signup():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    form = RegistrationForm()
+    if form.validate_on_submit(): 
+        new_user = user(user_name=form.user_name.data, email=form.email.data, full_name=form.full_name.data)
+        new_user.set_password(form.password.data)
+        db.session.add(new_user)
+        db.session.commit()
+        flash('Congratulations, you are now a registered user!')
+        return redirect(url_for('login'))
+    else:  # Handle GET requests and failed form validation
+        return render_template('signup.html', title='Register', form=form)
+
+# Accessing administrator webpage, should be only accessible via logged in Admin page --- not currently working ---
+@app.route('/administrator')
+@login_required  # Ensure only logged-in users can access this page
+def administrator():
+    if not current_user.is_admin:  
+        flash('Access denied: Administrator only.', 'danger')
+        return redirect(url_for('login'))
+    users = get_all_users()
+    stocks = stock.query.all()
+    market_settings = market_setting.query.first()
+    if not market_settings:
+        market_settings = market_setting()
+        db.session.add(market_settings)
+        db.session.commit()
+    return render_template(
+        'administrator.html',
+        users=users,
+        stocks=stocks,
+        market_settings=market_settings  # Pass market_settings to the template
+    )
+
 @app.route('/add_update_stock', methods=['POST'])
 @login_required
 def add_update_stock():
     if not current_user.is_admin:
         flash('You do not have permission to add or update stocks.', 'danger')
-        return redirect(url_for('index'))
+        return redirect(url_for('login'))
 
     if request.method == 'POST':
         # Get the stock data from the form
@@ -151,7 +350,7 @@ def add_update_stock():
 def delete_stock(stock_id):
     if not current_user.is_admin:
         flash('You do not have permission to delete stocks.', 'danger')
-        return redirect(url_for('index'))
+        return redirect(url_for('login'))
 
     stock_to_delete = stock.query.get_or_404(stock_id)
     try:
@@ -164,211 +363,12 @@ def delete_stock(stock_id):
 
     return redirect(url_for('administrator'))
 
-@app.route('/buy_stock/<int:stock_id>', methods=['GET', 'POST'])
-@login_required
-def buy_stock(stock_id):
-    if not is_market_open():
-        flash('Market is currently closed', 'danger')
-        return redirect(url_for('portfolio'))
-    if request.method == 'POST':
-        try:
-            quantity = int(request.form['quantity'])
-            if quantity <= 0:
-                flash('Please enter a positive quantity', 'danger')
-                return redirect(url_for('portfolio'))
-
-            stock_to_buy = stock.query.get_or_404(stock_id)
-            total_cost = quantity * stock_to_buy.price
-
-            # Check if user has enough cash
-            if current_user.cash_balance < total_cost:
-                flash('Insufficient funds for this purchase', 'danger')
-                return redirect(url_for('portfolio'))
-
-            # Check if enough stock volume is available
-            if stock_to_buy.volume < quantity:
-                flash('Not enough shares available for purchase', 'danger')
-                return redirect(url_for('portfolio'))
-
-            # Create transaction record (if applicable)
-            # ... your transaction code ...
-
-            # Update user's cash balance
-            current_user.cash_balance -= total_cost
-
-            # Update stock volume
-            stock_to_buy.volume -= quantity
-
-            # Update or create portfolio entry
-            portfolio_entry = portfolio.query.filter_by(
-                user_id=current_user.user_id,
-                stock_id=stock_id
-            ).first()
-
-            if portfolio_entry:
-                portfolio_entry.quantity += quantity
-            else:
-                new_portfolio_entry = portfolio(
-                    user_id=current_user.user_id,
-                    stock_id=stock_id,
-                    quantity=quantity
-                )
-                db.session.add(new_portfolio_entry)
-
-            db.session.commit()
-            flash(f'Successfully purchased {quantity} shares for ${total_cost}', 'success')
-
-        except ValueError:
-            flash('Invalid quantity', 'danger')
-            return redirect(url_for('portfolio'))
-        except Exception as e:
-            db.session.rollback()
-            flash(f'Error processing purchase: {str(e)}', 'danger')
-            return redirect(url_for('portfolio'))
-
-    return redirect(url_for('portfolio'))
-
-@app.route('/sell_stock/<int:stock_id>', methods=['POST'])
-@login_required
-def sell_stock(stock_id):
-    if not is_market_open():
-        flash('Market is currently closed', 'danger')
-        return redirect(url_for('portfolio'))
-    if request.method == 'POST':
-        try:
-            quantity = int(request.form['quantity'])
-            if quantity <= 0:
-                flash('Please enter a positive quantity', 'danger')
-                return redirect(url_for('portfolio'))
-
-            # Get the stock and portfolio entry
-            stock_to_sell = stock.query.get_or_404(stock_id)
-            portfolio_entry = portfolio.query.filter_by(
-                user_id=current_user.user_id,
-                stock_id=stock_id
-            ).first()
-
-            if not portfolio_entry:
-                flash('You do not own this stock', 'danger')
-                return redirect(url_for('portfolio'))
-
-            if portfolio_entry.quantity < quantity:
-                flash('You do not own enough shares to sell', 'danger')
-                return redirect(url_for('portfolio'))
-
-            # Calculate sale proceeds
-            sale_proceeds = quantity * stock_to_sell.price
-
-            # Update portfolio
-            portfolio_entry.quantity -= quantity
-            if portfolio_entry.quantity == 0:
-                db.session.delete(portfolio_entry)
-            
-            # Update user's cash balance
-            current_user.cash_balance += sale_proceeds
-
-            # Create transaction record
-            new_transaction = transaction(
-                user_id=current_user.user_id,
-                stock_id=stock_id,
-                type='sell',
-                quantity=quantity,
-                price=stock_to_sell.price
-            )
-            db.session.add(new_transaction)
-
-            # Update stock volume
-            stock_to_sell.volume += quantity
-
-            db.session.commit()
-            flash(f'Successfully sold {quantity} shares for ${sale_proceeds}', 'success')
-
-        except ValueError:
-            flash('Invalid quantity', 'danger')
-        except Exception as e:
-            db.session.rollback()
-            flash(f'Error processing sale: {str(e)}', 'danger')
-            
-    return redirect(url_for('portfolio'))
-
-@app.route('/deposit_cash', methods=['POST'])
-@login_required
-def deposit_cash():
-    if request.method == 'POST':
-        amount = Decimal(request.form['amount'])
-        current_user.cash_balance += amount
-        db.session.commit()
-        flash('Cash deposited successfully!', 'success')
-    return redirect(url_for('portfolio'))
-
-@app.route('/withdraw_cash', methods=['POST'])
-@login_required
-def withdraw_cash():
-    if request.method == 'POST':
-        amount = Decimal(request.form['amount'])
-        current_user.cash_balance -= amount
-        db.session.commit()
-        flash('Cash withdrawn successfully!', 'success')
-    return redirect(url_for('portfolio'))
-
-@app.route('/logout')
-@login_required
-def logout():
-    logout_user()  # This logs out the user
-    flash('You have been logged out successfully.', 'success')
-    return redirect(url_for('index'))  # Redirect to the home page after logging out
-
-@app.route('/test_db')
-def test_db():
-    try:
-        # Attempt a simple query to check the connection
-        db.session.execute(text('SELECT 1')) 
-        return jsonify({'status': 'success', 'message': 'Database connection successful!'})
-    except Exception as e:
-        return jsonify({'status': 'error', 'message': f'Database connection failed: {str(e)}'})
-
-@app.route('/signup', methods=['GET', 'POST'])
-def signup():
-    if current_user.is_authenticated:
-        return redirect(url_for('index'))
-    form = RegistrationForm()
-    if form.validate_on_submit(): 
-        new_user = user(user_name=form.user_name.data, email=form.email.data, full_name=form.full_name.data)
-        new_user.set_password(form.password.data)
-        db.session.add(new_user)
-        db.session.commit()
-        flash('Congratulations, you are now a registered user!')
-        return redirect(url_for('login'))
-    else:  # Handle GET requests and failed form validation
-        return render_template('signup.html', title='Register', form=form)
-
-# Accessing administrator webpage, should be only accessible via logged in Admin page --- not currently working ---
-@app.route('/administrator')
-@login_required  # Ensure only logged-in users can access this page
-def administrator():
-    if not current_user.is_admin:  
-        flash('Access denied: Administrator only.', 'danger')
-        return redirect(url_for('index'))
-    users = get_all_users()
-    stocks = stock.query.all()
-    market_settings = market_setting.query.first()
-    if not market_settings:
-        market_settings = market_setting()
-        db.session.add(market_settings)
-        db.session.commit()
-    return render_template(
-        'administrator.html',
-        users=users,
-        stocks=stocks,
-        market_settings=market_settings  # Pass market_settings to the template
-    )
-
 @app.route('/create_admin', methods=['GET', 'POST'])
 @login_required
 def create_admin():
     if not current_user.is_admin:
         flash('You do not have permission to create an admin account.', 'danger')
-        return redirect(url_for('index'))
+        return redirect(url_for('login'))
 
     form = AdminCreationForm()
     if form.validate_on_submit():
@@ -389,11 +389,17 @@ def create_admin():
 def delete_user(user_id):
     if not current_user.is_admin:
         flash('Access denied: Administrator only.', 'danger')
-        return redirect(url_for('index'))
+        return redirect(url_for('login'))
     if delete_user_by_id(user_id):  # Call delete function from models
         flash(f'User {user_id} has been deleted successfully.', 'success')
     else:
         flash(f'User {user_id} not found.', 'danger')
     return redirect(url_for('administrator'))
 
-
+@app.route('/test_stock')
+def test_stock():
+    try:
+        one_stock = stock.query.first()  # Using your lowercase model name
+        return str(one_stock)
+    except Exception as e:
+        return str(e) 

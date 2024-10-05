@@ -63,7 +63,15 @@
 
     <div class="admin-container">
         <h1>Admin Panel</h1>
-
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <ul class="flashes">
+                {% for category, message in messages %}
+                    <li class="{{ category }}">{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+        {% endwith %}
         <h2>Adjust Market Hours</h2>
         <form id="marketHoursForm" method="POST" action="{{ url_for('update_market_hours') }}">
             <div>

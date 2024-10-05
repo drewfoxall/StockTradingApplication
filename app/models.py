@@ -142,9 +142,9 @@ class portfolio(db.Model):
     # Flask-Login integration
 
 def delete_user_by_id(user_id):
-    user = user.query.get(user_id)  # Ensure 'User' is the correct model name
-    if user:
-        db.session.delete(user)
+    user_todelete = user.query.get(user_id)  # Ensure 'user' is the correct model name
+    if user_todelete:
+        db.session.delete(user_todelete)
         db.session.commit()
         return True
     return False

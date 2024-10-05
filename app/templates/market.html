@@ -41,6 +41,15 @@
     </div>
     <div class="buy-sell-container">
       <h1>Buy/Sell Stocks</h1>
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+          <ul class="flashes">
+              {% for category, message in messages %}
+                  <li class="{{ category }}">{{ message }}</li>
+              {% endfor %}
+          </ul>
+      {% endif %}
+      {% endwith %}
       <h2>Buy Stocks</h2>
         <table>
             <thead>

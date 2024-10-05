@@ -36,6 +36,15 @@
       <div class="hero_container">
         <div class="hero_content">
           <h1>Stock Trading</h1>
+          {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+              <ul class="flashes">
+                  {% for category, message in messages %}
+                      <li class="{{ category }}">{{ message }}</li>
+                  {% endfor %}
+              </ul>
+          {% endif %}
+          {% endwith %}
           <h2>At the tip of your fingers</h2>
           <p>Trade like never before</p>
           <button class="hero_button">
