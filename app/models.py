@@ -29,8 +29,11 @@ class user(UserMixin, db.Model):
         self.password_hash = generate_password_hash(password)
 
     def check_password(self, password):
-        return check_password_hash(self.password_hash, password)
-
+        print(f"Password from form: {password}")
+        print(f"Stored password hash: {self.password_hash}")
+        result = check_password_hash(self.password_hash, password)
+        print(f"Password check result: {result}")
+        return result
     @property
     def is_admin(self):
         return self.role == 'admin'

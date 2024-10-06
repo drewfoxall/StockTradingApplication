@@ -22,46 +22,22 @@ def login():
     form = LoginForm()
     
     if form.validate_on_submit():
+        print(f"Username from form: {form.username.data}")
         user_obj = user.query.filter_by(user_name=form.username.data).first()  # Query User model
+        print(f"User object from database: {user_obj}")
+        print(f"Password from form: {form.password.data}")
         if user_obj is None or not user_obj.check_password(form.password.data):
             flash('Invalid username or password', 'danger')
             return redirect(url_for('login'))  # Redirect back to login if invalid credentials
         
         login_user(user_obj, remember=form.remember_me.data)
         
-        # Redirect to next page if available, otherwise redirect to index
-        #next_page = request.args.get('next')
-        #if not next_page or urlparse(next_page).netloc != '':  # Prevent open redirect attacks
-            #next_page = url_for('view_portfolio') 
-        #return redirect(next_page)
-        # Redirect based on user role
         if user_obj.is_admin:
             return redirect(url_for('administrator'))  # Redirect to admin page
         else:
             return redirect(url_for('view_portfolio'))  # Redirect to portfolio page
     return render_template('login.html', title='Sign In', form=form)
     
-# @app.route('/portfolio', methods=['GET', 'POST'])
-# @login_required
-# def view_portfolio():  # Changed function name from portfolio to view_portfolio
-#     if current_user.is_authenticated:
-#         user_stocks = get_user_stocks(current_user.get_id())
-#         all_stocks = stock.query.all()
-#         total_portfolio_value = 0
-#         for stock_item in user_stocks:
-#             portfolio_entry = portfolio.query.filter_by(user_id=current_user.user_id, stock_id=stock.stock_id).first()
-#             if portfolio_entry:
-#                 total_portfolio_value += stock.price * portfolio_entry.quantity 
-#         return render_template('portfolio.html',
-#             user_stocks=user_stocks,
-#             all_stocks=all_stocks,
-#             total_portfolio_value=total_portfolio_value,  # Pass total value
-#             is_market_open=is_market_open()
-#             )
-#     else:
-#         flash('You need to log in to see your portfolio.', 'warning')
-#         return redirect(url_for('view_portfolio'))  # Updated redirect
-
 @app.route('/portfolio', methods=['GET', 'POST'])
 @login_required
 def view_portfolio():
@@ -97,55 +73,6 @@ def market():
     else:
         flash('You need to log in to see the market.', 'warning')
         return redirect(url_for('market'))
-
-# @app.route('/update_market_hours', methods=['POST'])
-# def update_market_hours():
-#     try:
-#         # Get the market setting instance using the correct primary key name
-#         setting = market_setting.query.get(1)  # This will get the first record
-        
-#         if not setting:
-#             return jsonify({'error': 'Market setting not found'}), 404
-            
-#         # Get data from request
-#         data = request.get_json()
-#         print(data)
-        
-#         # Parse the time strings into time objects
-#         # Assuming time is sent in format "HH:MM"
-#         if 'opening_time' in data:
-#             hours, minutes = map(int, data['opening_time'].split(':'))
-#             setting.opening_time = time(hours, minutes)
-            
-#         if 'closing_time' in data:
-#             hours, minutes = map(int, data['closing_time'].split(':'))
-#             setting.closing_time = time(hours, minutes)
-
-#         if 'trading_days' in data:
-#             # Check if trading_days is a list and handle accordingly
-#             if isinstance(data['trading_days'], list):
-#                 setting.trading_days = ','.join(data['trading_days'])
-#             else:
-#                 setting.trading_days = data['trading_days']   
-        
-#         # Commit the changes to database
-#         db.session.commit()
-        
-#         return jsonify({
-#             'message': 'Market hours updated successfully',
-#             'opening_time': setting.opening_time.strftime('%H:%M'),
-#             'closing_time': setting.closing_time.strftime('%H:%M'),
-#             'trading_days': setting.trading_days
-#         })
-        
-#     except Exception as e:
-#         db.session.rollback()
-#         return jsonify({'error': str(e)}), 500
-from flask import flash, redirect, url_for
-
-from flask import render_template, jsonify, redirect, url_for, flash, request
-from flask_login import current_user, login_user, logout_user, login_required
-# ... other imports ...
 
 @app.route('/update_market_hours', methods=['POST'])
 def update_market_hours():
