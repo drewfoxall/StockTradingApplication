@@ -60,7 +60,7 @@ class stock(db.Model):
 
     stock_orders = db.relationship('order', backref='stock_ref')
     stock_transactions = db.relationship('transaction', backref='stock_ref')
-    stock_portfolios = db.relationship('portfolio', backref='stock_ref')
+    stock_portfolios = db.relationship('portfolio', backref='stock_ref', lazy=True)
 
     def __repr__(self):             # Method useful for debugging and logging
         return f'<stock {self.ticker}: {self.company_name}>'
@@ -158,26 +158,40 @@ def get_all_users():
     users = user.query.all()
     return users
 
+# def get_user_stocks(user_id):
+#     """
+#     Retrieves the stocks owned by a specific user.
+#     """
+#     # This query joins the portfolio and stock tables to get the stock details for a user
+#     query = db.session.query(stock, portfolio.quantity).join(portfolio).filter(portfolio.user_id == user_id)
+#     user_stocks = query.all()  # Execute the query and get the results
+
+#     # Create a list of dictionaries to store the stock information
+#     stock_list = []
+#     for stock_obj, quantity in user_stocks:
+#         stock_info = {
+#             'ticker': stock_obj.ticker,
+#             'company_name': stock_obj.company_name,
+#             'quantity': quantity,
+#             'price': stock_obj.price
+#         }
+#         stock_list.append(stock_info)
+
+#     return stock_list  # Return the list of dictionaries
+
 def get_user_stocks(user_id):
     """
     Retrieves the stocks owned by a specific user.
     """
-    # This query joins the portfolio and stock tables to get the stock details for a user
-    query = db.session.query(stock, portfolio.quantity).join(portfolio).filter(portfolio.user_id == user_id)
-    user_stocks = query.all()  # Execute the query and get the results
-
-    # Create a list of dictionaries to store the stock information
-    stock_list = []
-    for stock_obj, quantity in user_stocks:
-        stock_info = {
-            'ticker': stock_obj.ticker,
-            'company_name': stock_obj.company_name,
-            'quantity': quantity,
-            'price': stock_obj.price
-        }
-        stock_list.append(stock_info)
-
-    return stock_list  # Return the list of dictionaries
+    user_stocks = []
+    portfolio_entries = portfolio.query.filter_by(user_id=user_id).all()
+    for entry in portfolio_entries:
+        stock_data = stock.query.get(entry.stock_id)
+        if stock_data:
+            user_stocks.append(stock_data)  # Append the Stock object directly
+        else:
+            print(f"Warning: Stock not found for stock_id: {entry.stock_id}")
+    return user_stocks
 
 def is_market_open():
     """Check if the market is currently open"""

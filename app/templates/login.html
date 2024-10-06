@@ -13,7 +13,7 @@
   <body>
     <div class="topnav">
       <a href="{{ url_for('index') }}"> Home </a>
-      <a href="{{ url_for('portfolio') }}"> Portfolio </a>
+      <a href="{{ url_for('view_portfolio') }}"> Portfolio </a>
       {% if current_user.is_authenticated %}
       <a href="{{url_for('market') }}"> Market </a>
       {% endif %}

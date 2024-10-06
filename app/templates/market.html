@@ -12,7 +12,7 @@
   <body>
     <div class="topnav">
       <a href="{{ url_for('index') }}"> Home </a>
-      <a href="{{ url_for('portfolio') }}"> Portfolio </a>
+      <a href="{{ url_for('view_portfolio') }}"> Portfolio </a>
       {% if current_user.is_authenticated %}
         <a href="{{url_for('market') }}"> Market </a>
         {% if current_user.is_admin %}
@@ -50,67 +50,76 @@
           </ul>
       {% endif %}
       {% endwith %}
-      <h2>Buy Stocks</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Stock Symbol</th>
-                    <th>Stock Name</th>
-                    <th>Current Price</th>
-                    <th>Available Volume</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for stock_item in all_stocks %}
-                <tr>
-                    <td>{{ stock_item.ticker }}</td>
-                    <td>{{ stock_item.company_name }}</td>
-                    <td>${{ "%.2f"|format(stock_item.price) }}</td>
-                    <td>{{ stock_item.volume }}</td>
-                    <td>
-                        <form action="{{ url_for('buy_stock', stock_id=stock_item.stock_id) }}" method="POST">
-                            <input type="number" name="quantity" min="1" max="{{ stock_item.volume }}" placeholder="Quantity" required />
-                            <button type="submit" class="btn">Buy</button>
-                        </form>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+      <!DOCTYPE html>
+<html lang="en">
+<head>
+  </head>
+<body>
+  <div class="buy-sell-container">
+    <h2>Buy Stocks</h2>
+    <table>
+      <tbody>
+        {% for stock_item in all_stocks %}
+        <tr>
+          <td>{{ stock_item.ticker }}</td>
+          <td>{{ stock_item.company_name }}</td>
+          <td>${{ "%.2f"|format(stock_item.price) }}</td>
+          <td>{{ stock_item.volume }}</td>
+          <td>
+            <form 
+              id="buy-form-{{ stock_item.stock_id }}"  
+              action="{{ url_for('buy_stock', stock_id=stock_item.stock_id) }}" 
+              method="POST">
+              <input type="number" name="quantity" min="1" max="{{ stock_item.volume }}" placeholder="Quantity" required />
+              <button type="submit" class="btn">Buy</button>
+            </form>
+            <script>
+              document.getElementById('buy-form-{{ stock_item.stock_id }}').addEventListener('submit', function(event) {
+                event.preventDefault(); // Prevent default submission
+                if (confirm('Are you sure you want to buy this stock?')) {
+                  this.submit(); // Submit the form if confirmed
+                } else {
+                  // Optionally, you can reset the form or clear the input field here
+                  // Example: this.reset(); 
+                }
+              });
+            </script>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
 
-        <h2>Sell Stocks</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Stock Symbol</th>
-                    <th>Stock Name</th>
-                    <th>Current Price</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for stock_item in stock %}  
-                <tr>
-                    <td>{{ stock_item.ticker }}</td>
-                    <td>{{ stock_item.company_name }}</td>
-                    <td>{{ stock_item.price }}</td>
-                    <td>
-                        <form action="{{ url_for('sell_stock', stock_id=stock_item.stock_id) }}" method="POST">
-                            <input type="number" name="quantity" placeholder="Quantity" required />
-                            <button type="submit" class="btn">Sell</button>
-                        </form>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-
-
-      <section>
-        <h2>Available Stocks</h2>
-        <table></table>
-      </section>
-    </div>
-  </body>
+    <h2>Sell Stocks</h2>
+    <table>
+      <tbody>
+        {% for stock_item in user_stocks %}
+        <tr>
+          <td>{{ stock_item.ticker }}</td>
+          <td>{{ stock_item.company_name }}</td>
+          <td>{{ stock_item.price }}</td>
+          <td>{{ stock_item.stock_portfolios[0].quantity }}</td>
+          <td>
+            <form 
+              id="sell-form-{{ stock_item.stock_id }}"  {# Add ID to the form #}
+              action="{{ url_for('sell_stock', stock_id=stock_item.stock_id) }}" 
+              method="POST">
+              <input type="number" name="quantity" min="1" max="{{ stock_item.stock_portfolios[0].quantity }}" placeholder="Quantity" required />
+              <button type="submit" class="btn">Sell</button>
+            </form>
+            <script>
+              document.getElementById('sell-form-{{ stock_item.stock_id }}').addEventListener('submit', function(event) {
+                event.preventDefault(); // Prevent default submission
+                if (confirm('Are you sure you want to sell this stock?')) {
+                  this.submit(); // Submit the form if confirmed
+                }
+              });
+            </script>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</body>
 </html>
