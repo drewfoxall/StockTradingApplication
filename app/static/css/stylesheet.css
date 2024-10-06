@@ -673,6 +673,11 @@ input[type="number"] {
   text-align: center;
   color: green;
 }
+form label, form input {
+  display: inline-block;  /* Ensures elements are aligned */
+  width: 150px;          /* Adjust the width as needed */
+  margin-bottom: 10px;   /* Add spacing between elements */
+}
 /* Footer */
 .footer {
   background-color: #4c5760;

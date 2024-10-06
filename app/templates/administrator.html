@@ -164,7 +164,34 @@
                 {% endfor %}
             </tbody>
         </table>
-
+        {% block content %}
+        <h1>User Admin</h1>
+        <h2>Create User</h2>
+        <form method="POST" action="{{ url_for('create_user') }}">
+            {{ form.hidden_tag() }}
+            <div>
+                {{ form.full_name.label }} {{ form.full_name }}
+            </div>
+            <div>
+                {{ form.username.label }} {{ form.username }}
+            </div>
+            <div>
+                {{ form.email.label }} {{ form.email }}
+            </div>
+            <div>
+                {{ form.password.label }} {{ form.password }}
+            </div>
+            <div>
+                {{ form.password2.label }} {{ form.password2 }}
+            </div>
+            <div>
+                {{ form.is_admin.label }} {{ form.is_admin }}
+            </div>
+            <div>
+                {{ form.submit }}
+            </div>
+        </form>
+        {% endblock %}
         <h2>Delete Users</h2>
         <table>
             <thead>

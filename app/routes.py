@@ -298,6 +298,7 @@ def administrator():
     users = get_all_users()
     stocks = stock.query.all()
     market_settings = market_setting.query.first()
+    form = AdminCreationForm()
     if not market_settings:
         market_settings = market_setting()
         db.session.add(market_settings)
@@ -306,9 +307,9 @@ def administrator():
         'administrator.html',
         users=users,
         stocks=stocks,
-        market_settings=market_settings  # Pass market_settings to the template
+        market_settings=market_settings,
+        form=form  # Pass market_settings to the template
     )
-
 @app.route('/add_update_stock', methods=['POST'])
 @login_required
 def add_update_stock():
@@ -387,6 +388,27 @@ def create_admin():
         return redirect(url_for('administrator'))
     return render_template('create_admin.html', form=form)
 
+@app.route('/create_user', methods=['GET', 'POST'])
+@login_required
+def create_user():
+    if not current_user.is_admin:
+        flash('You do not have permission to create users.', 'danger')
+        return redirect(url_for('login'))
+
+    form = AdminCreationForm()
+    if form.validate_on_submit():
+        new_user = user(
+            user_name=form.username.data,
+            full_name=form.full_name.data,
+            email=form.email.data,
+            role='admin' if form.is_admin.data else 'user'
+        )
+        new_user.set_password(form.password.data)
+        db.session.add(new_user)
+        db.session.commit()
+        flash('User account created successfully!', 'success')
+        return redirect(url_for('administrator'))
+    return render_template('administrator.html', form=form)
 @app.route('/delete_user/<int:user_id>', methods=['POST'])
 @login_required
 def delete_user(user_id):
