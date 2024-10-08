@@ -102,7 +102,7 @@
             </ul>
         {% endif %}
         {% endwith %}
-        <h3>Your cash balance: {{ current_user.cash_balance }}</h3>
+        <h3>Your cash balance: ${{ "{:,.2f}".format(current_user.cash_balance) }}</h3>
 
         <h2>Deposit Cash (whole dollars only)</h2>
         <form action="{{ url_for('deposit_cash') }}" method="POST">
