@@ -359,23 +359,72 @@ def add_update_stock():
 
     return redirect(url_for('administrator'))
 
-@app.route('/delete_stock/<int:stock_id>', methods=['POST'])
+# @app.route('/delete_stock/<int:stock_id>', methods=['POST'])
+# @login_required
+# def delete_stock(stock_id):
+#     if not current_user.is_admin:
+#         flash('Access denied: Administrator only.', 'danger')
+#         return redirect(url_for('index'))
+
+#     try:
+#         # Delete related portfolio entries first
+#         portfolio.query.filter_by(stock_id=stock_id).delete()
+
+#         # Delete related transaction entries
+#         transaction.query.filter_by(stock_id=stock_id).delete()
+
+#         # Now delete the stock
+#         stock_to_delete = stock.query.get_or_404(stock_id)
+#         db.session.delete(stock_to_delete)
+#         db.session.commit()
+#         flash(f'Stock {stock_to_delete.company_name} has been deleted successfully.', 'success')
+#     except Exception as e:
+#         db.session.rollback()
+#         flash(f'Error deleting stock: {e}', 'danger')
+
+#     return redirect(url_for('administrator'))
+
+@app.route('/delete_stock/<int:stock_id>', methods=['GET', 'POST'])  # Add GET method
 @login_required
 def delete_stock(stock_id):
     if not current_user.is_admin:
-        flash('You do not have permission to delete stocks.', 'danger')
-        return redirect(url_for('login'))
+        flash('Access denied: Administrator only.', 'danger')
+        return redirect(url_for('index'))
 
-    stock_to_delete = stock.query.get_or_404(stock_id)
-    try:
-        db.session.delete(stock_to_delete)
-        db.session.commit()
-        flash('Stock deleted successfully!', 'success')
-    except Exception as e:
-        db.session.rollback()
-        flash(f'Error deleting stock: {e}', 'danger')
+    stock_to_delete = stock.query.get_or_404(stock_id)  # Fetch the stock object here
 
-    return redirect(url_for('administrator'))
+    if request.method == 'GET':  # Handle GET request to display the warning
+        # Check if any user has this stock in their portfolio
+        if portfolio.query.filter_by(stock_id=stock_id).first():
+            flash('Cannot delete this stock. It is currently held by one or more users.', 'danger')
+            return redirect(url_for('administrator')) 
+
+        # flash('Warning: Deleting this stock will also delete its associated transaction history. Are you sure you want to proceed?', 'warning')
+        # return redirect(url_for('administrator'))  # Redirect back to the admin page
+
+    if request.method == 'POST':  # Handle POST request to perform the deletion
+        try:
+            # Check again if any user has this stock in their portfolio (in case it changed since the GET request)
+            if portfolio.query.filter_by(stock_id=stock_id).first():
+                flash('Cannot delete this stock. It is currently held by one or more users.', 'danger')
+                return redirect(url_for('administrator')) 
+            
+            # Delete related portfolio entries first
+            portfolio.query.filter_by(stock_id=stock_id).delete()
+
+            # Delete related transaction entries
+            transaction.query.filter_by(stock_id=stock_id).delete()
+
+            # Now delete the stock
+            stock_to_delete = stock.query.get_or_404(stock_id)
+            db.session.delete(stock_to_delete)
+            db.session.commit()
+            flash(f'Stock {stock_to_delete.company_name} has been deleted successfully.', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error deleting stock: {e}', 'danger')
+
+        return redirect(url_for('administrator'))
 
 @app.route('/create_admin', methods=['GET', 'POST'])
 @login_required
@@ -419,6 +468,7 @@ def create_user():
         flash('User account created successfully!', 'success')
         return redirect(url_for('administrator'))
     return render_template('administrator.html', form=form)
+
 @app.route('/delete_user/<int:user_id>', methods=['POST'])
 @login_required
 def delete_user(user_id):
@@ -426,7 +476,7 @@ def delete_user(user_id):
         flash('Access denied: Administrator only.', 'danger')
         return redirect(url_for('login'))
     if delete_user_by_id(user_id):  # Call delete function from models
-        flash(f'User {user_id} has been deleted successfully.', 'success')
+        flash(f'User has been deleted successfully.', 'success')
     else:
         flash(f'User {user_id} not found.', 'danger')
     return redirect(url_for('administrator'))
