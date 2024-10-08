@@ -61,9 +61,9 @@ class stock(db.Model):
     volume = db.Column(db.Integer, nullable=False)
     price = db.Column(db.DECIMAL(10, 2), nullable=False)
 
-    stock_orders = db.relationship('order', backref='stock_ref')
-    stock_transactions = db.relationship('transaction', backref='stock_ref')
-    stock_portfolios = db.relationship('portfolio', backref='stock_ref', lazy=True)
+    stock_orders = db.relationship('order', backref='stock_order_ref')
+    #stock_transactions = db.relationship('transaction', backref='stock_transaction_ref')
+    stock_portfolios = db.relationship('portfolio', backref='stock_portfolio_ref', lazy=True)
 
     def __repr__(self):             # Method useful for debugging and logging
         return f'<stock {self.ticker}: {self.company_name}>'
@@ -122,6 +122,9 @@ class transaction(db.Model):
     quantity = db.Column(db.Integer, nullable=False)
     price = db.Column(db.DECIMAL(10, 2), nullable=False)
     time_stamp = db.Column(db.DateTime, default=datetime.utcnow)
+    stock = db.relationship('stock', backref='transaction_ref', lazy=True)
+    stock_id = db.Column(db.Integer, db.ForeignKey('stock.stock_id'), nullable=False)
+
 
     def __repr__(self):
         return f'<transaction {self.transaction_id}: {self.type} {self.quantity} of stock {self.stock_id} by User {self.user_id}>'

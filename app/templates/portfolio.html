@@ -137,6 +137,29 @@
         </table>
         {% else %}
         {% endif %}
+        <h2>Transaction History (Last 10 Transactions)</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Stock</th>
+                    <th>Type</th>
+                    <th>Quantity</th>
+                    <th>Price</th>
+                    <th>Timestamp</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for transaction in transactions %}
+                    <tr>
+                        <td>{{ transaction.stock.ticker }}</td>  
+                        <td>{{ transaction.type }}</td>
+                        <td>{{ transaction.quantity }}</td>
+                        <td>${{ transaction.price }}</td>
+                        <td>{{ transaction.time_stamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>  
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </body>
 </html>

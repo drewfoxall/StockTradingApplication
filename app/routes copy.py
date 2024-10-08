@@ -7,11 +7,7 @@ from urllib.parse import urlparse
 from app.models import user, delete_user_by_id, get_all_users, get_user_stocks, stock, order, transaction, market_setting, is_market_open, portfolio
 from flask_wtf import FlaskForm
 from decimal import Decimal
-from datetime import datetime
-from threading import Thread
-import time
-import random
-
+from datetime import time
 
 
 @app.route('/')
@@ -48,9 +44,6 @@ def view_portfolio():
     if current_user.is_authenticated:
         user_stocks = get_user_stocks(current_user.get_id())
         all_stocks = stock.query.all()  # Use the Stock model
-        transactions = transaction.query.filter_by(user_id=current_user.user_id) \
-                                       .order_by(transaction.time_stamp.desc()) \
-                                       .limit(10).all()
         total_portfolio_value = 0
         for stock_item in user_stocks:  # Rename loop variable
             portfolio_entry = portfolio.query.filter_by(user_id=current_user.user_id, stock_id=stock_item.stock_id).first()
@@ -58,7 +51,6 @@ def view_portfolio():
                 total_portfolio_value += stock_item.price * portfolio_entry.quantity  # Use stock_item here
         return render_template('portfolio.html',
                                 user_stocks=user_stocks,
-                                transactions=transactions,
                                 all_stocks=all_stocks,
                                 total_portfolio_value=total_portfolio_value,
                                 is_market_open=is_market_open()
@@ -495,42 +487,4 @@ def test_stock():
         one_stock = stock.query.first()  # Using your lowercase model name
         return str(one_stock)
     except Exception as e:
-        return str(e)
-    
-def adjust_prices():
-    """Background task to adjust stock prices"""
-    while True:
-        with app.app_context():
-            try:
-                # Only adjust prices if the market is open
-                if is_market_open():
-                    # Get all stocks from the stock table (admin-created stocks)
-                    stocks = stock.query.all()
-                    
-                    for stock_item in stocks:
-                        # Calculate new price within ±10% of current price
-                        current_price = float(stock_item.price)
-                        min_price = current_price * 0.9
-                        max_price = current_price * 1.1
-                        new_price = round(random.uniform(min_price, max_price), 2)
-                        
-                        # Update the stock price
-                        stock_item.price = new_price
-                        app.logger.info(f"Adjusted {stock_item.ticker} price from ${current_price:.2f} to ${new_price:.2f}")
-                    
-                    db.session.commit()
-                    app.logger.info(f"Successfully adjusted stock prices at {datetime.now()}")
-                else:
-                    app.logger.info("Market is currently closed - no price adjustments made")
-                
-            except Exception as e:
-                app.logger.error(f"Error adjusting stock prices: {str(e)}")
-                db.session.rollback()
-            
-            # Wait for 5 minutes before next adjustment
-            time.sleep(300)  # 300 seconds = 5 minutes
-
-def start_price_adjuster():
-    """Start the background thread for price adjustment"""
-    price_thread = Thread(target=adjust_prices, daemon=True)
-    price_thread.start()
+        return str(e) 
