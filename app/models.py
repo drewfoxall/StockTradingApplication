@@ -1,4 +1,5 @@
 from flask_login import UserMixin
+from flask_bcrypt import Bcrypt
 from datetime import time
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
@@ -13,6 +14,9 @@ holidays = [
     '12-25',  # Christmas Day
     # Add more holidays here
 ]
+
+bcrypt = Bcrypt()
+
 class user(UserMixin, db.Model):
  
     __tablename__ = 'user'
@@ -26,17 +30,28 @@ class user(UserMixin, db.Model):
     role = db.Column(db.String(50), nullable=False, default='user')
 
     def set_password(self, password):
-        self.password_hash = generate_password_hash(password)
+        #hash password with bcrypt
+        self.password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
 
     def check_password(self, password):
-        print(f"Password from form: {password}")
-        print(f"Stored password hash: {self.password_hash}")
-        result = check_password_hash(self.password_hash, password)
-        print(f"Password check result: {result}")
-        return result
+        #check password with bcrypt
+        try:
+            is_valid = bcrypt.check_password_hash(self.password_hash, password)
+            print(f"Password check for user {self.user_name}: {'Success' if is_valid else 'Failed'}")
+            return is_valid
+        except Exception as e:
+            print(f"Error checking password for user {self.user_name}: {str(e)}")
+            return False
+        # print(f"Password from form: {password}")
+        # print(f"Stored password hash: {self.password_hash}")
+        # result = check_password_hash(self.password_hash, password)
+        # print(f"Password check result: {result}")
+        # return result
     @property
     def is_admin(self):
         return self.role == 'admin'
+    def get_id(self):
+        return str(self.user_id)
 
 # Relationship to orders
     order = db.relationship('order', backref='user')

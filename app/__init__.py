@@ -1,4 +1,5 @@
 from flask import Flask
+from flask_bcrypt import Bcrypt
 from config import Config
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -9,6 +10,7 @@ from threading import Thread
 # Create the Flask application
 app = Flask(__name__)
 app.config.from_object(Config)
+bcrypt = Bcrypt(app)
 
 # Database setup
 db = SQLAlchemy(app)

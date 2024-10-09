@@ -21,27 +21,55 @@ def index():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
-        app.logger.info("User is authenticated, redirecting to index.")
+        app.logger.info(f"User {current_user.user_name} is already authenticated, redirecting to index.")
         return redirect(url_for('index'))
     
     form = LoginForm()
     
     if form.validate_on_submit():
-        print(f"Username from form: {form.username.data}")
-        user_obj = user.query.filter_by(user_name=form.username.data).first()  # Query User model
-        print(f"User object from database: {user_obj}")
-        print(f"Password from form: {form.password.data}")
-        if user_obj is None or not user_obj.check_password(form.password.data):
-            flash('Invalid username or password', 'danger')
-            return redirect(url_for('login'))  # Redirect back to login if invalid credentials
-        
-        login_user(user_obj, remember=form.remember_me.data)
-        
-        if user_obj.is_admin:
-            return redirect(url_for('administrator'))  # Redirect to admin page
-        else:
-            return redirect(url_for('view_portfolio'))  # Redirect to portfolio page
+        try:
+            app.logger.info(f"Login attempt for username: {form.username.data}")
+            user_obj = user.query.filter_by(user_name=form.username.data).first()
+            
+            if user_obj is None:
+                app.logger.warning(f"Login failed: User {form.username.data} not found")
+                flash('Invalid username or password', 'danger')
+                return redirect(url_for('login'))
+            
+            if not user_obj.check_password(form.password.data):
+                app.logger.warning(f"Login failed: Invalid password for user {form.username.data}")
+                flash('Invalid username or password', 'danger')
+                return redirect(url_for('login'))
+            
+            login_user(user_obj, remember=form.remember_me.data)
+            app.logger.info(f"Successful login for user {user_obj.user_name}")
+            
+            if user_obj.is_admin:
+                return redirect(url_for('administrator'))
+            else:
+                return redirect(url_for('view_portfolio'))
+                
+        except Exception as e:
+            app.logger.error(f"Login error: {str(e)}")
+            flash('An error occurred during login. Please try again.', 'danger')
+            return redirect(url_for('login'))
+            
     return render_template('login.html', title='Sign In', form=form)
+    #     print(f"Username from form: {form.username.data}")
+    #     user_obj = user.query.filter_by(user_name=form.username.data).first()  # Query User model
+    #     print(f"User object from database: {user_obj}")
+    #     print(f"Password from form: {form.password.data}")
+    #     if user_obj is None or not user_obj.check_password(form.password.data):
+    #         flash('Invalid username or password', 'danger')
+    #         return redirect(url_for('login'))  # Redirect back to login if invalid credentials
+        
+    #     login_user(user_obj, remember=form.remember_me.data)
+        
+    #     if user_obj.is_admin:
+    #         return redirect(url_for('administrator'))  # Redirect to admin page
+    #     else:
+    #         return redirect(url_for('view_portfolio'))  # Redirect to portfolio page
+    # return render_template('login.html', title='Sign In', form=form)
     
 @app.route('/portfolio', methods=['GET', 'POST'])
 @login_required
