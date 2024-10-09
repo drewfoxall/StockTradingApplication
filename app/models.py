@@ -35,11 +35,6 @@ class user(UserMixin, db.Model):
         except Exception as e:
             print(f"Error checking password for user {self.user_name}: {str(e)}")
             return False
-        # print(f"Password from form: {password}")
-        # print(f"Stored password hash: {self.password_hash}")
-        # result = check_password_hash(self.password_hash, password)
-        # print(f"Password check result: {result}")
-        # return result
     @property
     def is_admin(self):
         return self.role == 'admin'
@@ -74,33 +69,71 @@ class stock(db.Model):
     last_updated_date = db.Column(db.Date, nullable=True)
 
     stock_orders = db.relationship('order', backref='stock_order_ref')
-    #stock_transactions = db.relationship('transaction', backref='stock_transaction_ref')
     stock_portfolios = db.relationship('portfolio', backref='stock_portfolio_ref', lazy=True)
 
     def __repr__(self):             # Method useful for debugging and logging
         return f'<stock {self.ticker}: {self.company_name}>'
     
+    # def update_price(self, new_price):
+    #     """Update price and adjust high/low values"""
+    #     new_price = Decimal(str(new_price))
+        
+    #     # Initialize high/low if None
+    #     if self.daily_high is None or self.daily_low is None:
+    #         self.daily_high = new_price
+    #         self.daily_low = new_price
+    #         print(f"Initialized {self.ticker} high/low to ${new_price}")
+    #         return
+
+    #     # Update high/low if needed
+    #     if new_price > self.daily_high:
+    #         self.daily_high = new_price
+    #         print(f"New high for {self.ticker}: ${new_price}")
+        
+    #     if new_price < self.daily_low:
+    #         self.daily_low = new_price
+    #         print(f"New low for {self.ticker}: ${new_price}")
+        
+    #     self.price = new_price
     def update_price(self, new_price):
         """Update price and adjust high/low values"""
-        new_price = Decimal(str(new_price))
-        
-        # Initialize high/low if None
-        if self.daily_high is None or self.daily_low is None:
-            self.daily_high = new_price
-            self.daily_low = new_price
-            print(f"Initialized {self.ticker} high/low to ${new_price}")
-            return
-
-        # Update high/low if needed
-        if new_price > self.daily_high:
-            self.daily_high = new_price
-            print(f"New high for {self.ticker}: ${new_price}")
-        
-        if new_price < self.daily_low:
-            self.daily_low = new_price
-            print(f"New low for {self.ticker}: ${new_price}")
-        
-        self.price = new_price
+        try:
+            new_price = Decimal(str(new_price))
+            current_date = datetime.now().date()
+            
+            # Check if we need to reset for a new trading day
+            if self.last_updated_date != current_date:
+                # Reset high/low for the new day
+                self.daily_high = new_price
+                self.daily_low = new_price
+                self.last_updated_date = current_date
+                print(f"New trading day: Reset {self.ticker} high/low to ${new_price}")
+            else:
+                # Update high/low before changing current price
+                if self.daily_high is None or new_price > self.daily_high:
+                    self.daily_high = new_price
+                    print(f"New high for {self.ticker}: ${new_price}")
+                
+                if self.daily_low is None or new_price < self.daily_low:
+                    self.daily_low = new_price
+                    print(f"New low for {self.ticker}: ${new_price}")
+            
+            # Store old price for logging
+            old_price = self.price
+            
+            # Update current price last
+            self.price = new_price
+            
+            print(
+                f"Updated {self.ticker} - "
+                f"Price: ${old_price} -> ${new_price}, "
+                f"High: ${self.daily_high}, "
+                f"Low: ${self.daily_low}"
+            )
+            
+        except Exception as e:
+            print(f"Error updating price for {self.ticker}: {str(e)}")
+            raise
 
 class market_setting(db.Model):
     """
@@ -159,7 +192,6 @@ class transaction(db.Model):
     stock = db.relationship('stock', backref='transaction_ref', lazy=True)
     stock_id = db.Column(db.Integer, db.ForeignKey('stock.stock_id'), nullable=False)
 
-
     def __repr__(self):
         return f'<transaction {self.transaction_id}: {self.type} {self.quantity} of stock {self.stock_id} by User {self.user_id}>'
 
@@ -176,16 +208,6 @@ class portfolio(db.Model):
     def __repr__(self):
         return f'<portfolio user {self.user_id}: stock {self.stock_id} - quantity {self.quantity}>'
 
-#################################################################################################
-#################################################################################################
-
-
-    # Relationships (add these as implement other features)
-    # transactions = db.relationship('Transaction', backref='user', lazy=True)
-    # portfolio = db.relationship('portfolio', backref='user', lazy=True)
-    # orders = db.relationship('order', backref='user', lazy=True) 
-    # Flask-Login integration
-
 def delete_user_by_id(user_id):
     user_todelete = user.query.get(user_id)  # Ensure 'user' is the correct model name
     if user_todelete:
@@ -197,27 +219,6 @@ def delete_user_by_id(user_id):
 def get_all_users():
     users = user.query.all()
     return users
-
-# def get_user_stocks(user_id):
-#     """
-#     Retrieves the stocks owned by a specific user.
-#     """
-#     # This query joins the portfolio and stock tables to get the stock details for a user
-#     query = db.session.query(stock, portfolio.quantity).join(portfolio).filter(portfolio.user_id == user_id)
-#     user_stocks = query.all()  # Execute the query and get the results
-
-#     # Create a list of dictionaries to store the stock information
-#     stock_list = []
-#     for stock_obj, quantity in user_stocks:
-#         stock_info = {
-#             'ticker': stock_obj.ticker,
-#             'company_name': stock_obj.company_name,
-#             'quantity': quantity,
-#             'price': stock_obj.price
-#         }
-#         stock_list.append(stock_info)
-
-#     return stock_list  # Return the list of dictionaries
 
 def get_user_stocks(user_id):
     """
@@ -266,10 +267,6 @@ def is_market_open():
     trading_days = list(map(int, setting.trading_days.split(',')))  # Convert to list of integers
     if today + 1 not in trading_days:  # Adjust today's index to match your format (1-7)
         return False
-    # Check if today is a holiday
-    # today_date = datetime.now().strftime('%m-%d')
-    # if today_date in holidays:
-    #     return False
     return True
 
 class Holiday(db.Model):

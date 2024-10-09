@@ -523,99 +523,48 @@ def test_stock():
         return str(one_stock)
     except Exception as e:
         return str(e)
-    
-# def adjust_prices():
-#     """Background task to adjust stock prices"""
-#     while True:
-#         with app.app_context():
-#             try:
-#                 # Only adjust prices if the market is open
-#                 if is_market_open():
-#                     # Get all stocks from the stock table (admin-created stocks)
-#                     stocks = stock.query.all()
-                    
-#                     for stock_item in stocks:
-#                         # Calculate new price within ±10% of current price
-#                         original_price = float(stock_item.original_price)  # Use original_price
-#                         min_price = original_price * 0.8  # 20% lower
-#                         max_price = original_price * 1.2  # 20% higher
-#                         new_price = round(random.uniform(min_price, max_price), 2)
-
-#                         # update high/low prices
-#                         if not stock_item.daily_high or new_price > stock_item.daily_high:
-#                             stock_item.daily_high = new_price
-#                         if not stock_item.daily_low or new_price < stock_item.daily_low:
-#                             stock_item.daily_low = new_price
-                        
-#                         # Update the stock price
-#                         current_price =stock_item.price
-#                         stock_item.price = new_price
-#                         app.logger.info(f"Adjusted {stock_item.ticker} price from ${current_price:.2f} to ${new_price:.2f}")
-                    
-#                     db.session.commit()
-#                     app.logger.info(f"Successfully adjusted stock prices at {datetime.now()}")
-#                     #reset high/low prices at end of trading day
-#                     now = datetime.now()
-#                     # closing_time = datetime.combine(now.date(), market_setting.closing_time)  # Get closing time for today
-#                     market_settings = db.session.query(market_setting).first()
-#                     closing_time = datetime.combine(datetime.now().date(), market_settings.closing_time)
-#                     if now > closing_time:  # Check if it's past closing time
-#                         for stock_item in stocks:
-#                             stock_item.daily_high = None
-#                             stock_item.daily_low = None
-#                         db.session.commit()
-#                         app.logger.info(f"Reset daily high/low prices at {now}")
-
-
-#                 else:
-#                     app.logger.info("Market is currently closed - no price adjustments made")
-                
-#             except Exception as e:
-#                 app.logger.error(f"Error adjusting stock prices: {str(e)}")
-#                 db.session.rollback()
-            
-#             # Wait for 30 seconds before next adjustment
-#             Time.sleep(30)  # 30 seconds
 
 # def adjust_prices():
 #     """Background task to adjust stock prices"""
 #     while True:
 #         with app.app_context():
 #             try:
-#                 # Only adjust prices if the market is open
 #                 if is_market_open():
-#                     # Get all stocks from the stock table (admin-created stocks)
 #                     stocks = stock.query.all()
 #                     current_time = datetime.now()
                     
 #                     for stock_item in stocks:
-#                         # Calculate new price within ±10% of current price
-#                         original_price = float(stock_item.original_price)
-#                         min_price = original_price * 0.8  # 20% lower
-#                         max_price = original_price * 1.2  # 20% higher
-#                         new_price = round(random.uniform(min_price, max_price), 2)
+#                         # Convert original_price to Decimal for consistent handling
+#                         original_price = Decimal(str(stock_item.original_price))
+#                         min_price = original_price * Decimal('0.8')
+#                         max_price = original_price * Decimal('1.2')
+#                         new_price = Decimal(str(round(random.uniform(float(min_price), float(max_price)), 2)))
 
 #                         # Set initial high/low if they're None
 #                         if stock_item.daily_high is None or stock_item.daily_low is None:
 #                             stock_item.daily_high = new_price
 #                             stock_item.daily_low = new_price
-#                             app.logger.info(f"Initialized {stock_item.ticker} high/low to ${new_price:.2f}")
+#                             app.logger.info(f"Initialized {stock_item.ticker} high/low to ${new_price}")
 #                         else:
+#                             # Convert to Decimal for comparison
+#                             current_high = Decimal(str(stock_item.daily_high))
+#                             current_low = Decimal(str(stock_item.daily_low))
+                            
 #                             # Update high price if new price is higher
-#                             if new_price > stock_item.daily_high:
-#                                 app.logger.info(f"New high for {stock_item.ticker}: ${new_price:.2f} (old high: ${stock_item.daily_high:.2f})")
+#                             if new_price > current_high:
+#                                 app.logger.info(f"New high for {stock_item.ticker}: ${new_price} (old high: ${current_high})")
 #                                 stock_item.daily_high = new_price
                             
 #                             # Update low price if new price is lower
-#                             if new_price < stock_item.daily_low:
-#                                 app.logger.info(f"New low for {stock_item.ticker}: ${new_price:.2f} (old low: ${stock_item.daily_low:.2f})")
+#                             if new_price < current_low:
+#                                 app.logger.info(f"New low for {stock_item.ticker}: ${new_price} (old low: ${current_low})")
 #                                 stock_item.daily_low = new_price
 
 #                         # Update the current price
 #                         current_price = stock_item.price
 #                         stock_item.price = new_price
-#                         app.logger.info(f"Adjusted {stock_item.ticker} price from ${current_price:.2f} to ${new_price:.2f}")
-#                         app.logger.info(f"Current high/low for {stock_item.ticker}: High=${stock_item.daily_high:.2f}, Low=${stock_item.daily_low:.2f}")
+#                         app.logger.info(f"Adjusted {stock_item.ticker} price from ${current_price} to ${new_price}")
+#                         app.logger.info(f"Current high/low for {stock_item.ticker}: High=${stock_item.daily_high}, Low=${stock_item.daily_low}")
                     
 #                     db.session.commit()
                     
@@ -636,8 +585,61 @@ def test_stock():
 #                 app.logger.error(f"Error adjusting stock prices: {str(e)}")
 #                 db.session.rollback()
             
-#             Time.sleep(30)  # 30 seconds
+# def adjust_prices():
+#     """Background task to adjust stock prices"""
+#     while True:
+#         with app.app_context():
+#             try:
+#                 if is_market_open():
+#                     stocks = stock.query.all()
+#                     current_time = datetime.now()
+#                     current_date = current_time.date()
+                    
+#                     for stock_item in stocks:
+#                         # Check if we need to reset daily high/low for a new day
+#                         if stock_item.last_updated_date != current_date:
+#                             stock_item.daily_high = None
+#                             stock_item.daily_low = None
+#                             stock_item.last_updated_date = current_date
+#                             app.logger.info(f"Reset daily high/low for {stock_item.ticker} - new trading day")
+                        
+#                         # Calculate new price
+#                         original_price = Decimal(str(stock_item.original_price))
+#                         min_price = original_price * Decimal('0.8')
+#                         max_price = original_price * Decimal('1.2')
+#                         new_price = Decimal(str(round(random.uniform(float(min_price), float(max_price)), 2)))
 
+#                         # Handle initial case
+#                         if stock_item.daily_high is None or stock_item.daily_low is None:
+#                             stock_item.daily_high = new_price
+#                             stock_item.daily_low = new_price
+#                             app.logger.info(f"Initialized {stock_item.ticker} high/low to ${new_price}")
+#                         else:
+#                             # Update high/low BEFORE updating current price
+#                             if new_price > stock_item.daily_high:
+#                                 stock_item.daily_high = new_price
+#                                 app.logger.info(f"New high for {stock_item.ticker}: ${new_price}")
+                            
+#                             if new_price < stock_item.daily_low:
+#                                 stock_item.daily_low = new_price
+#                                 app.logger.info(f"New low for {stock_item.ticker}: ${new_price}")
+                        
+#                         # Update current price last
+#                         old_price = stock_item.price
+#                         stock_item.price = new_price
+#                         app.logger.info(f"Adjusted {stock_item.ticker} price from ${old_price} to ${new_price}")
+#                         app.logger.info(f"Current high/low for {stock_item.ticker}: High=${stock_item.daily_high}, Low=${stock_item.daily_low}")
+                    
+#                     db.session.commit()
+                    
+#                 else:
+#                     app.logger.info("Market is currently closed - no price adjustments made")
+                
+#             except Exception as e:
+#                 app.logger.error(f"Error adjusting stock prices: {str(e)}")
+#                 db.session.rollback()    
+
+#             Time.sleep(30)  # 30 seconds (fixed capitalization)
 def adjust_prices():
     """Background task to adjust stock prices"""
     while True:
@@ -645,53 +647,18 @@ def adjust_prices():
             try:
                 if is_market_open():
                     stocks = stock.query.all()
-                    current_time = datetime.now()
                     
                     for stock_item in stocks:
-                        # Convert original_price to Decimal for consistent handling
+                        # Calculate new price
                         original_price = Decimal(str(stock_item.original_price))
                         min_price = original_price * Decimal('0.8')
                         max_price = original_price * Decimal('1.2')
                         new_price = Decimal(str(round(random.uniform(float(min_price), float(max_price)), 2)))
-
-                        # Set initial high/low if they're None
-                        if stock_item.daily_high is None or stock_item.daily_low is None:
-                            stock_item.daily_high = new_price
-                            stock_item.daily_low = new_price
-                            app.logger.info(f"Initialized {stock_item.ticker} high/low to ${new_price}")
-                        else:
-                            # Convert to Decimal for comparison
-                            current_high = Decimal(str(stock_item.daily_high))
-                            current_low = Decimal(str(stock_item.daily_low))
-                            
-                            # Update high price if new price is higher
-                            if new_price > current_high:
-                                app.logger.info(f"New high for {stock_item.ticker}: ${new_price} (old high: ${current_high})")
-                                stock_item.daily_high = new_price
-                            
-                            # Update low price if new price is lower
-                            if new_price < current_low:
-                                app.logger.info(f"New low for {stock_item.ticker}: ${new_price} (old low: ${current_low})")
-                                stock_item.daily_low = new_price
-
-                        # Update the current price
-                        current_price = stock_item.price
-                        stock_item.price = new_price
-                        app.logger.info(f"Adjusted {stock_item.ticker} price from ${current_price} to ${new_price}")
-                        app.logger.info(f"Current high/low for {stock_item.ticker}: High=${stock_item.daily_high}, Low=${stock_item.daily_low}")
+                        
+                        # Use the updated update_price method
+                        stock_item.update_price(new_price)
                     
                     db.session.commit()
-                    
-                    # Check for market close and reset
-                    market_settings = db.session.query(market_setting).first()
-                    closing_time = datetime.combine(current_time.date(), market_settings.closing_time)
-                    if current_time > closing_time:
-                        app.logger.info("Market closing - resetting daily high/low prices")
-                        for stock_item in stocks:
-                            stock_item.daily_high = None
-                            stock_item.daily_low = None
-                        db.session.commit()
-
                 else:
                     app.logger.info("Market is currently closed - no price adjustments made")
                 
@@ -699,7 +666,21 @@ def adjust_prices():
                 app.logger.error(f"Error adjusting stock prices: {str(e)}")
                 db.session.rollback()
             
-            Time.sleep(30)  # 30 seconds (fixed capitalization)
+            Time.sleep(30)
+
+@app.route('/api/stocks')
+def get_stocks():
+    stocks = stock.query.all()
+    return jsonify([{
+        'stock_id': s.stock_id,
+        'ticker': s.ticker,
+        'company_name': s.company_name,
+        'price': float(s.price),
+        'volume': s.volume,
+        'market_cap': float(s.price * s.volume),
+        'daily_high': float(s.daily_high) if s.daily_high is not None else float(s.price),
+        'daily_low': float(s.daily_low) if s.daily_low is not None else float(s.price)
+    } for s in stocks])
 
 def start_price_adjuster():
     """Start the background thread for price adjustment"""
