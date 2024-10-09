@@ -61,6 +61,9 @@ class stock(db.Model):
     volume = db.Column(db.Integer, nullable=False)
     price = db.Column(db.DECIMAL(10, 2), nullable=False)
     original_price = db.Column(db.DECIMAL(10, 2), nullable=False)
+    daily_high = db.Column(db.DECIMAL(10, 2), nullable=True)
+    daily_low = db.Column(db.DECIMAL(10, 2), nullable=True)
+    last_updated_date = db.Column(db.Date, nullable=True)
 
     stock_orders = db.relationship('order', backref='stock_order_ref')
     #stock_transactions = db.relationship('transaction', backref='stock_transaction_ref')

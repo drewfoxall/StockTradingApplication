@@ -59,14 +59,29 @@
     <h3>Your cash balance: ${{ "{:,.2f}".format(current_user.cash_balance) }}</h3>
     <h2>Buy Stocks</h2>
     <table>
-      <tbody>
+      <thead>  
+        <tr>
+            <th>Stock Symbol</th>
+            <th>Stock Name</th>
+            <th>Current Price</th>
+            <th>Available Volume</th>
+            <th>Market Cap</th>  
+            <th>High</th>  
+            <th>Low</th>  
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
         {% for stock_item in all_stocks %}
         <tr>
-          <td>{{ stock_item.ticker }}</td>
-          <td>{{ stock_item.company_name }}</td>
-          <td>${{ "%.2f"|format(stock_item.price) }}</td>
-          <td>{{ stock_item.volume }}</td>
-          <td>
+            <td>{{ stock_item.ticker }}</td>
+            <td>{{ stock_item.company_name }}</td>
+            <td>${{ "%.2f"|format(stock_item.price) }}</td>
+            <td>{{ stock_item.volume }}</td>
+            <td>${{ '{:,.2f}'.format(stock_item.market_cap) }}</td>  
+            <td>${{ "%.2f"|format(stock_item.daily_high) }}</td>  
+            <td>${{ "%.2f"|format(stock_item.daily_low) }}</td>  
+            <td>
             <form 
               id="buy-form-{{ stock_item.stock_id }}"  
               action="{{ url_for('buy_stock', stock_id=stock_item.stock_id) }}" 
