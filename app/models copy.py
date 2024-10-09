@@ -8,6 +8,14 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import DECIMAL
 from decimal import Decimal
 
+# List of major holidays (MM-DD format)
+holidays = [
+    '01-01',  # New Year's Day
+    '07-04',  # Independence Day
+    '12-25',  # Christmas Day
+    # Add more holidays here
+]
+
 bcrypt = Bcrypt()
 
 class user(UserMixin, db.Model):
@@ -235,13 +243,6 @@ def get_user_stocks(user_id):
 
 def is_market_open():
     """Check if the market is currently open"""
-    now = datetime.now()
-    current_date = now.strftime('%m-%d')
-    
-    # Check if today is a holiday
-    holiday = Holiday.query.filter_by(date=current_date).first()
-    if holiday:
-        return False
     
     setting = market_setting.query.first()
     if not setting:
@@ -266,21 +267,12 @@ def is_market_open():
     trading_days = list(map(int, setting.trading_days.split(',')))  # Convert to list of integers
     if today + 1 not in trading_days:  # Adjust today's index to match your format (1-7)
         return False
-    # Check if today is a holiday
-    # today_date = datetime.now().strftime('%m-%d')
-    # if today_date in holidays:
-    #     return False
-    return True
+       # Check if today is a holiday
+    today_date = datetime.now().strftime('%m-%d')
+    if today_date in holidays:
+        return False
 
-class Holiday(db.Model):
-    __tablename__ = 'holiday'
-    
-    holiday_id = db.Column(db.Integer, primary_key=True)
-    date = db.Column(db.String(5), nullable=False, unique=True)  # Format: MM-DD
-    description = db.Column(db.String(100), nullable=False)
-    
-    def __repr__(self):
-        return f'<Holiday {self.date}: {self.description}>'
+    return True
 
 @login.user_loader
 def load_user(user_id):

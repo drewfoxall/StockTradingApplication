@@ -2,9 +2,9 @@ from flask import render_template, jsonify, redirect, url_for, flash, request
 from flask_login import current_user, login_user, logout_user, login_required
 from app import app, db  # Import the 'app' instance from __init__.py
 from sqlalchemy import text
-from app.forms import RegistrationForm, LoginForm, PurchaseForm, AdminCreationForm
+from app.forms import RegistrationForm, LoginForm, AdminCreationForm, HolidayForm
 from urllib.parse import urlparse
-from app.models import user, delete_user_by_id, get_all_users, get_user_stocks, stock, order, transaction, market_setting, is_market_open, portfolio
+from app.models import user, delete_user_by_id, get_all_users, get_user_stocks, stock, order, transaction, market_setting, is_market_open, portfolio, Holiday
 from flask_wtf import FlaskForm
 from decimal import Decimal
 from datetime import datetime
@@ -349,6 +349,9 @@ def administrator():
     if not current_user.is_admin:  
         flash('Access denied: Administrator only.', 'danger')
         return redirect(url_for('login'))
+    # Get holiday form and current holidays
+    holiday_form = HolidayForm()
+    holidays = Holiday.query.order_by(Holiday.date).all()
     users = get_all_users()
     stocks = stock.query.all()
     market_settings = market_setting.query.first()
@@ -362,7 +365,9 @@ def administrator():
         users=users,
         stocks=stocks,
         market_settings=market_settings,
-        form=form  # Pass market_settings to the template
+        form=form,
+        holiday_form=holiday_form,
+        holidays=holidays # Pass market_settings to the template
     )
 @app.route('/add_update_stock', methods=['POST'])
 @login_required
@@ -572,45 +577,108 @@ def test_stock():
 #             # Wait for 30 seconds before next adjustment
 #             Time.sleep(30)  # 30 seconds
 
+# def adjust_prices():
+#     """Background task to adjust stock prices"""
+#     while True:
+#         with app.app_context():
+#             try:
+#                 # Only adjust prices if the market is open
+#                 if is_market_open():
+#                     # Get all stocks from the stock table (admin-created stocks)
+#                     stocks = stock.query.all()
+#                     current_time = datetime.now()
+                    
+#                     for stock_item in stocks:
+#                         # Calculate new price within ±10% of current price
+#                         original_price = float(stock_item.original_price)
+#                         min_price = original_price * 0.8  # 20% lower
+#                         max_price = original_price * 1.2  # 20% higher
+#                         new_price = round(random.uniform(min_price, max_price), 2)
+
+#                         # Set initial high/low if they're None
+#                         if stock_item.daily_high is None or stock_item.daily_low is None:
+#                             stock_item.daily_high = new_price
+#                             stock_item.daily_low = new_price
+#                             app.logger.info(f"Initialized {stock_item.ticker} high/low to ${new_price:.2f}")
+#                         else:
+#                             # Update high price if new price is higher
+#                             if new_price > stock_item.daily_high:
+#                                 app.logger.info(f"New high for {stock_item.ticker}: ${new_price:.2f} (old high: ${stock_item.daily_high:.2f})")
+#                                 stock_item.daily_high = new_price
+                            
+#                             # Update low price if new price is lower
+#                             if new_price < stock_item.daily_low:
+#                                 app.logger.info(f"New low for {stock_item.ticker}: ${new_price:.2f} (old low: ${stock_item.daily_low:.2f})")
+#                                 stock_item.daily_low = new_price
+
+#                         # Update the current price
+#                         current_price = stock_item.price
+#                         stock_item.price = new_price
+#                         app.logger.info(f"Adjusted {stock_item.ticker} price from ${current_price:.2f} to ${new_price:.2f}")
+#                         app.logger.info(f"Current high/low for {stock_item.ticker}: High=${stock_item.daily_high:.2f}, Low=${stock_item.daily_low:.2f}")
+                    
+#                     db.session.commit()
+                    
+#                     # Check for market close and reset
+#                     market_settings = db.session.query(market_setting).first()
+#                     closing_time = datetime.combine(current_time.date(), market_settings.closing_time)
+#                     if current_time > closing_time:
+#                         app.logger.info("Market closing - resetting daily high/low prices")
+#                         for stock_item in stocks:
+#                             stock_item.daily_high = None
+#                             stock_item.daily_low = None
+#                         db.session.commit()
+
+#                 else:
+#                     app.logger.info("Market is currently closed - no price adjustments made")
+                
+#             except Exception as e:
+#                 app.logger.error(f"Error adjusting stock prices: {str(e)}")
+#                 db.session.rollback()
+            
+#             Time.sleep(30)  # 30 seconds
+
 def adjust_prices():
     """Background task to adjust stock prices"""
     while True:
         with app.app_context():
             try:
-                # Only adjust prices if the market is open
                 if is_market_open():
-                    # Get all stocks from the stock table (admin-created stocks)
                     stocks = stock.query.all()
                     current_time = datetime.now()
                     
                     for stock_item in stocks:
-                        # Calculate new price within ±10% of current price
-                        original_price = float(stock_item.original_price)
-                        min_price = original_price * 0.8  # 20% lower
-                        max_price = original_price * 1.2  # 20% higher
-                        new_price = round(random.uniform(min_price, max_price), 2)
+                        # Convert original_price to Decimal for consistent handling
+                        original_price = Decimal(str(stock_item.original_price))
+                        min_price = original_price * Decimal('0.8')
+                        max_price = original_price * Decimal('1.2')
+                        new_price = Decimal(str(round(random.uniform(float(min_price), float(max_price)), 2)))
 
                         # Set initial high/low if they're None
                         if stock_item.daily_high is None or stock_item.daily_low is None:
                             stock_item.daily_high = new_price
                             stock_item.daily_low = new_price
-                            app.logger.info(f"Initialized {stock_item.ticker} high/low to ${new_price:.2f}")
+                            app.logger.info(f"Initialized {stock_item.ticker} high/low to ${new_price}")
                         else:
+                            # Convert to Decimal for comparison
+                            current_high = Decimal(str(stock_item.daily_high))
+                            current_low = Decimal(str(stock_item.daily_low))
+                            
                             # Update high price if new price is higher
-                            if new_price > stock_item.daily_high:
-                                app.logger.info(f"New high for {stock_item.ticker}: ${new_price:.2f} (old high: ${stock_item.daily_high:.2f})")
+                            if new_price > current_high:
+                                app.logger.info(f"New high for {stock_item.ticker}: ${new_price} (old high: ${current_high})")
                                 stock_item.daily_high = new_price
                             
                             # Update low price if new price is lower
-                            if new_price < stock_item.daily_low:
-                                app.logger.info(f"New low for {stock_item.ticker}: ${new_price:.2f} (old low: ${stock_item.daily_low:.2f})")
+                            if new_price < current_low:
+                                app.logger.info(f"New low for {stock_item.ticker}: ${new_price} (old low: ${current_low})")
                                 stock_item.daily_low = new_price
 
                         # Update the current price
                         current_price = stock_item.price
                         stock_item.price = new_price
-                        app.logger.info(f"Adjusted {stock_item.ticker} price from ${current_price:.2f} to ${new_price:.2f}")
-                        app.logger.info(f"Current high/low for {stock_item.ticker}: High=${stock_item.daily_high:.2f}, Low=${stock_item.daily_low:.2f}")
+                        app.logger.info(f"Adjusted {stock_item.ticker} price from ${current_price} to ${new_price}")
+                        app.logger.info(f"Current high/low for {stock_item.ticker}: High=${stock_item.daily_high}, Low=${stock_item.daily_low}")
                     
                     db.session.commit()
                     
@@ -631,9 +699,53 @@ def adjust_prices():
                 app.logger.error(f"Error adjusting stock prices: {str(e)}")
                 db.session.rollback()
             
-            Time.sleep(30)  # 30 seconds
+            Time.sleep(30)  # 30 seconds (fixed capitalization)
 
 def start_price_adjuster():
     """Start the background thread for price adjustment"""
     price_thread = Thread(target=adjust_prices, daemon=True)
     price_thread.start()
+
+@app.route('/admin/holidays', methods=['GET', 'POST'])
+@login_required
+def manage_holidays():
+    if not current_user.is_admin:
+        flash('Access denied.', 'danger')
+        return redirect(url_for('index'))
+    
+    form = HolidayForm()
+    
+    if form.validate_on_submit():
+        try:
+            holiday = Holiday(
+                date=form.date.data,
+                description=form.description.data
+            )
+            db.session.add(holiday)
+            db.session.commit()
+            flash(f'Holiday {form.date.data} added successfully!', 'success')
+            return redirect(url_for('administrator'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error adding holiday: {str(e)}', 'danger')
+    
+    holidays = Holiday.query.order_by(Holiday.date).all()
+    return render_template('administrator', form=form, holidays=holidays)
+
+@app.route('/admin/holidays/delete/<int:holiday_id>', methods=['POST'])
+@login_required
+def delete_holiday(holiday_id):
+    if not current_user.is_admin:
+        flash('Access denied.', 'danger')
+        return redirect(url_for('index'))
+    
+    try:
+        holiday = Holiday.query.get_or_404(holiday_id)
+        db.session.delete(holiday)
+        db.session.commit()
+        flash(f'Holiday {holiday.date} deleted successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting holiday: {str(e)}', 'danger')
+    
+    return redirect(url_for('administrator'))

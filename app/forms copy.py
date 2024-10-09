@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, BooleanField, IntegerField
-from wtforms.validators import DataRequired, Email, EqualTo, ValidationError, DataRequired, Regexp, Length
+from wtforms.validators import DataRequired, Email, EqualTo, ValidationError, DataRequired,NumberRange
 from app import db
 from app.models import user as UserModel
 
@@ -29,8 +29,8 @@ class LoginForm(FlaskForm):
     remember_me = BooleanField('Remember Me')
     submit = SubmitField('Sign In')
 
-# class PurchaseForm(FlaskForm):
-#     quantity = IntegerField('Quantity', validators=[DataRequired(), NumberRange(min=1)])
+class PurchaseForm(FlaskForm):
+    quantity = IntegerField('Quantity', validators=[DataRequired(), NumberRange(min=1)])
 
 class AdminCreationForm(FlaskForm):
     full_name = StringField('Full Name', validators=[DataRequired()])
@@ -41,14 +41,3 @@ class AdminCreationForm(FlaskForm):
     submit = SubmitField('Create Admin')
     is_admin = BooleanField('Is Admin')
     submit = SubmitField('Create User')  # Changed button label
-
-class HolidayForm(FlaskForm):
-    date = StringField('Date (MM-DD)', 
-                      validators=[
-                          DataRequired(),
-                          Regexp(r'^(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$', 
-                                message='Date must be in MM-DD format')
-                      ])
-    description = StringField('Description', 
-                            validators=[DataRequired(), Length(max=100)])
-    submit = SubmitField('Add Holiday')
