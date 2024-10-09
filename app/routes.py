@@ -515,8 +515,8 @@ def adjust_prices():
                 app.logger.error(f"Error adjusting stock prices: {str(e)}")
                 db.session.rollback()
             
-            # Wait for 5 minutes before next adjustment
-            Time.sleep(30)  # 300 seconds = 5 minutes
+            # Wait for 30 seconds before next adjustment
+            Time.sleep(30)  # 30 seconds
 
 def start_price_adjuster():
     """Start the background thread for price adjustment"""
