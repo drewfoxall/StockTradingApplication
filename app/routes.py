@@ -8,8 +8,9 @@ from app.models import user, delete_user_by_id, get_all_users, get_user_stocks, 
 from flask_wtf import FlaskForm
 from decimal import Decimal
 from datetime import datetime
+from datetime import time
 from threading import Thread
-import time
+import time as Time
 import random
 
 
@@ -343,6 +344,16 @@ def add_update_stock():
         volume = request.form.get('volume')
 
         # Validate the input (ensure they are valid values, etc.)
+        if not all([ticker, company_name, price, volume]):
+            flash('Please fill in all fields.', 'danger')
+            return redirect(url_for('administrator'))
+
+        try:
+            price = Decimal(price)  # Convert price to Decimal
+            volume = int(volume)    # Convert volume to integer
+        except ValueError:
+            flash('Invalid price or volume value.', 'danger')
+            return redirect(url_for('administrator'))
 
         # Check if the stock already exists
         existing_stock = stock.query.filter_by(ticker=ticker).first()
@@ -358,7 +369,8 @@ def add_update_stock():
                 ticker=ticker,
                 company_name=company_name,
                 price=price,
-                volume=volume
+                volume=volume,
+                original_price=price
             )
             db.session.add(new_stock)
             flash('Stock added successfully!', 'success')
@@ -366,31 +378,6 @@ def add_update_stock():
         db.session.commit()
 
     return redirect(url_for('administrator'))
-
-# @app.route('/delete_stock/<int:stock_id>', methods=['POST'])
-# @login_required
-# def delete_stock(stock_id):
-#     if not current_user.is_admin:
-#         flash('Access denied: Administrator only.', 'danger')
-#         return redirect(url_for('index'))
-
-#     try:
-#         # Delete related portfolio entries first
-#         portfolio.query.filter_by(stock_id=stock_id).delete()
-
-#         # Delete related transaction entries
-#         transaction.query.filter_by(stock_id=stock_id).delete()
-
-#         # Now delete the stock
-#         stock_to_delete = stock.query.get_or_404(stock_id)
-#         db.session.delete(stock_to_delete)
-#         db.session.commit()
-#         flash(f'Stock {stock_to_delete.company_name} has been deleted successfully.', 'success')
-#     except Exception as e:
-#         db.session.rollback()
-#         flash(f'Error deleting stock: {e}', 'danger')
-
-#     return redirect(url_for('administrator'))
 
 @app.route('/delete_stock/<int:stock_id>', methods=['GET', 'POST'])  # Add GET method
 @login_required
@@ -509,12 +496,13 @@ def adjust_prices():
                     
                     for stock_item in stocks:
                         # Calculate new price within ±10% of current price
-                        current_price = float(stock_item.price)
-                        min_price = current_price * 0.9
-                        max_price = current_price * 1.1
+                        original_price = float(stock_item.original_price)  # Use original_price
+                        min_price = original_price * 0.8  # 20% lower
+                        max_price = original_price * 1.2  # 20% higher
                         new_price = round(random.uniform(min_price, max_price), 2)
                         
                         # Update the stock price
+                        current_price =stock_item.price
                         stock_item.price = new_price
                         app.logger.info(f"Adjusted {stock_item.ticker} price from ${current_price:.2f} to ${new_price:.2f}")
                     
@@ -528,7 +516,7 @@ def adjust_prices():
                 db.session.rollback()
             
             # Wait for 5 minutes before next adjustment
-            time.sleep(300)  # 300 seconds = 5 minutes
+            Time.sleep(30)  # 300 seconds = 5 minutes
 
 def start_price_adjuster():
     """Start the background thread for price adjustment"""

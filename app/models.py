@@ -60,6 +60,7 @@ class stock(db.Model):
     ticker = db.Column(db.String(10), unique=True, nullable=False)
     volume = db.Column(db.Integer, nullable=False)
     price = db.Column(db.DECIMAL(10, 2), nullable=False)
+    original_price = db.Column(db.DECIMAL(10, 2), nullable=False)
 
     stock_orders = db.relationship('order', backref='stock_order_ref')
     #stock_transactions = db.relationship('transaction', backref='stock_transaction_ref')
