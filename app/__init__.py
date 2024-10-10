@@ -6,6 +6,7 @@ from flask_migrate import Migrate
 from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
 from threading import Thread
+from datetime import timedelta
 
 # Create the Flask application
 app = Flask(__name__)
@@ -19,6 +20,9 @@ migrate = Migrate(app, db)
 # Login manager setup
 login = LoginManager(app)
 login.login_view = 'login'
+
+# Configure session timeout (e.g., 30 minutes)
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)
 
 # Import routes after app initialization to avoid circular imports
 from app import routes, models

@@ -120,15 +120,22 @@
         {% if user_stocks %}
         <table class="portfolio-table">
             <thead>
-                </thead>
+                <tr>
+                    <th>Stock</th>
+                    <th>Company</th>
+                    <th>Quantity Owned</th>
+                    <th>Price</th>
+                    <th>Total Value</th>
+                </tr>
+            </thead>
             <tbody>
                 {% for item in user_stocks %}
                 <tr>
                     <td>{{ item.ticker }}</td>
                     <td>{{ item.company_name }}</td>
                     <td>{{ item.stock_portfolios[0].quantity }}</td>  {# Access using indexing #}
-                    <td>${{ "%.2f"|format(item.price) }}</td>
-                    <td>${{ "%.2f"|format(item.price * item.stock_portfolios[0].quantity) }}</td>
+                    <td>${{ '{:,.2f}'.format(item.price) }}</td>
+                    <td>${{ '{:,.2f}'.format(item.price * item.stock_portfolios[0].quantity) }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -145,7 +152,7 @@
                     <th>Type</th>
                     <th>Quantity</th>
                     <th>Price</th>
-                    <th>Timestamp</th>
+                    <th>Timestamp (Local Time)</th>
                 </tr>
             </thead>
             <tbody>
@@ -155,11 +162,34 @@
                         <td>{{ transaction.type }}</td>
                         <td>{{ transaction.quantity }}</td>
                         <td>${{ transaction.price }}</td>
-                        <td>{{ transaction.time_stamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>  
+                        <td class="timestamp" data-utc="{{ transaction.time_stamp.strftime('%Y-%m-%d %H:%M:%S') }}">
+                            {{ transaction.time_stamp.strftime('%Y-%m-%d %H:%M:%S') }}
+                        </td>  
                     </tr>
                 {% endfor %}
             </tbody>
         </table>
+        
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Convert all timestamps to local time
+            const timestampElements = document.querySelectorAll('.timestamp');
+            
+            timestampElements.forEach(element => {
+                const utcTimestamp = element.dataset.utc;
+                const date = new Date(utcTimestamp + ' UTC');
+                
+                // Get local time string
+                const localTimeString = date.toLocaleString();
+                
+                // Get short timezone name
+                const shortTimeZone = date.toLocaleTimeString('en-US', { timeZoneName: 'short' }).split(' ').pop();
+                
+                // Combine time and timezone
+                element.textContent = `${localTimeString} (${shortTimeZone})`;
+            });
+        });
+        </script>
     </div>
 </body>
 </html>

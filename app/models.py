@@ -91,11 +91,11 @@ class stock(db.Model):
                 # Update high/low before changing current price
                 if self.daily_high is None or new_price > self.daily_high:
                     self.daily_high = new_price
-                    print(f"New high for {self.ticker}: ${new_price}")
+                    #print(f"New high for {self.ticker}: ${new_price}")
                 
                 if self.daily_low is None or new_price < self.daily_low:
                     self.daily_low = new_price
-                    print(f"New low for {self.ticker}: ${new_price}")
+                    #print(f"New low for {self.ticker}: ${new_price}")
             
             # Store old price for logging
             old_price = self.price
