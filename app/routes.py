@@ -1,4 +1,4 @@
-from flask import render_template, jsonify, redirect, url_for, flash, request
+from flask import render_template, jsonify, redirect, url_for, flash, request, session
 from flask_login import current_user, login_user, logout_user, login_required
 from app import app, db  # Import the 'app' instance from __init__.py
 from sqlalchemy import text
@@ -18,6 +18,8 @@ def index():
     return render_template('index.html')
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    message = request.args.get('message')
+    
     if current_user.is_authenticated:
         app.logger.info(f"User {current_user.user_name} is already authenticated, redirecting to index.")
         return redirect(url_for('index'))
@@ -52,8 +54,13 @@ def login():
             flash('An error occurred during login. Please try again.', 'danger')
             return redirect(url_for('login'))
             
-    return render_template('login.html', title='Sign In', form=form)
-    
+    return render_template('login.html', title='Sign In', form=form, message=message)
+
+@app.route('/logout_session')
+def logout_session():
+    session.clear()
+    return redirect(url_for('login', message="You have been logged out due to inactivity."))
+
 @app.route('/portfolio', methods=['GET', 'POST'])
 @login_required
 def view_portfolio():

@@ -22,7 +22,7 @@ login = LoginManager(app)
 login.login_view = 'login'
 
 # Configure session timeout (e.g., 30 minutes)
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=10)
 
 # Import routes after app initialization to avoid circular imports
 from app import routes, models
