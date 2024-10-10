@@ -103,12 +103,12 @@ class stock(db.Model):
             # Update current price last
             self.price = new_price
             
-            print(
-                f"Updated {self.ticker} - "
-                f"Price: ${old_price} -> ${new_price}, "
-                f"High: ${self.daily_high}, "
-                f"Low: ${self.daily_low}"
-            )
+            # print(
+            #     f"Updated {self.ticker} - "
+            #     f"Price: ${old_price} -> ${new_price}, "
+            #     f"High: ${self.daily_high}, "
+            #     f"Low: ${self.daily_low}"
+            #)
             
         except Exception as e:
             print(f"Error updating price for {self.ticker}: {str(e)}")

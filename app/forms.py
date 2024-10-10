@@ -39,7 +39,7 @@ class AdminCreationForm(FlaskForm):
     password2 = PasswordField('Confirm Password', validators=[DataRequired(), EqualTo('password')])
     email = StringField('Email', validators=[DataRequired()])
     submit = SubmitField('Create Admin')
-    is_admin = BooleanField('Is Admin')
+    is_admin = BooleanField('Admin')
     submit = SubmitField('Create User')  # Changed button label
 
 class HolidayForm(FlaskForm):

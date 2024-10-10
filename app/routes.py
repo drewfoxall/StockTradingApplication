@@ -13,8 +13,6 @@ from threading import Thread
 import time as Time
 import random
 
-
-
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -55,21 +53,6 @@ def login():
             return redirect(url_for('login'))
             
     return render_template('login.html', title='Sign In', form=form)
-    #     print(f"Username from form: {form.username.data}")
-    #     user_obj = user.query.filter_by(user_name=form.username.data).first()  # Query User model
-    #     print(f"User object from database: {user_obj}")
-    #     print(f"Password from form: {form.password.data}")
-    #     if user_obj is None or not user_obj.check_password(form.password.data):
-    #         flash('Invalid username or password', 'danger')
-    #         return redirect(url_for('login'))  # Redirect back to login if invalid credentials
-        
-    #     login_user(user_obj, remember=form.remember_me.data)
-        
-    #     if user_obj.is_admin:
-    #         return redirect(url_for('administrator'))  # Redirect to admin page
-    #     else:
-    #         return redirect(url_for('view_portfolio'))  # Redirect to portfolio page
-    # return render_template('login.html', title='Sign In', form=form)
     
 @app.route('/portfolio', methods=['GET', 'POST'])
 @login_required

@@ -51,10 +51,6 @@
       {% endif %}
       {% endwith %}
       <!DOCTYPE html>
-<html lang="en">
-<head>
-  </head>
-<body>
   <div class="buy-sell-container">
     <h3>Your cash balance: ${{ "{:,.2f}".format(current_user.cash_balance) }}</h3>
     <h2>Buy Stocks</h2>
@@ -121,7 +117,7 @@
                         priceCell.textContent = formatCurrency(newPrice);
                         priceCell.style.backgroundColor = newPrice > oldPrice ? '#d4edda' : 
                                                         newPrice < oldPrice ? '#f8d7da' : 'transparent';
-                        setTimeout(() => priceCell.style.backgroundColor = 'transparent', 1000);
+                        // setTimeout(() => priceCell.style.backgroundColor = 'transparent', 1000);
     
                         // Update other fields
                         row.querySelector('.volume').textContent = stock.volume;
