@@ -74,27 +74,6 @@ class stock(db.Model):
     def __repr__(self):             # Method useful for debugging and logging
         return f'<stock {self.ticker}: {self.company_name}>'
     
-    # def update_price(self, new_price):
-    #     """Update price and adjust high/low values"""
-    #     new_price = Decimal(str(new_price))
-        
-    #     # Initialize high/low if None
-    #     if self.daily_high is None or self.daily_low is None:
-    #         self.daily_high = new_price
-    #         self.daily_low = new_price
-    #         print(f"Initialized {self.ticker} high/low to ${new_price}")
-    #         return
-
-    #     # Update high/low if needed
-    #     if new_price > self.daily_high:
-    #         self.daily_high = new_price
-    #         print(f"New high for {self.ticker}: ${new_price}")
-        
-    #     if new_price < self.daily_low:
-    #         self.daily_low = new_price
-    #         print(f"New low for {self.ticker}: ${new_price}")
-        
-    #     self.price = new_price
     def update_price(self, new_price):
         """Update price and adjust high/low values"""
         try:

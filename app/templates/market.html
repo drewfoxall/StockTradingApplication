@@ -156,54 +156,6 @@
         });
     });
     </script>
-    <!-- <table>
-      <thead>  
-        <tr>
-            <th>Stock Symbol</th>
-            <th>Stock Name</th>
-            <th>Current Price</th>
-            <th>Available Volume</th>
-            <th>Market Cap</th>  
-            <th>High</th>  
-            <th>Low</th>  
-            <th>Action</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for stock_item in all_stocks %}
-        <tr>
-            <td>{{ stock_item.ticker }}</td>
-            <td>{{ stock_item.company_name }}</td>
-            <td>${{ "%.2f"|format(stock_item.price) }}</td>
-            <td>{{ stock_item.volume }}</td>
-            <td>${{ '{:,.2f}'.format(stock_item.market_cap) }}</td>  
-            <td>${{ "%.2f"|format(stock_item.daily_high) }}</td>  
-            <td>${{ "%.2f"|format(stock_item.daily_low) }}</td>  
-            <td>
-            <form 
-              id="buy-form-{{ stock_item.stock_id }}"  
-              action="{{ url_for('buy_stock', stock_id=stock_item.stock_id) }}" 
-              method="POST">
-              <input type="number" name="quantity" min="1" max="{{ stock_item.volume }}" placeholder="Quantity" required />
-              <button type="submit" class="btn">Buy</button>
-            </form>
-            <script>
-              document.getElementById('buy-form-{{ stock_item.stock_id }}').addEventListener('submit', function(event) {
-                event.preventDefault(); // Prevent default submission
-                if (confirm('Are you sure you want to buy this stock?')) {
-                  this.submit(); // Submit the form if confirmed
-                } else {
-                  // Optionally, you can reset the form or clear the input field here
-                  // Example: this.reset(); 
-                }
-              });
-            </script>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table> -->
-
     <h2>Sell Stocks</h2>
     <table>
       <tbody>
