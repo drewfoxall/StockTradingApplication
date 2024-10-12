@@ -104,43 +104,9 @@
     function formatNumber(number) {
         return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     }
-    
-    // Function to update stock data
-    // function updateStockData() {
-    //     fetch('/api/stocks')  // You'll need to create this endpoint
-    //         .then(response => response.json())
-    //         .then(stocks => {
-    //             stocks.forEach(stock => {
-    //                 const row = document.querySelector(`tr[data-stock-id="${stock.stock_id}"]`);
-    //                 if (row) {
-    //                     // Update price with color animation
-    //                     const priceCell = row.querySelector('.price');
-    //                     const oldPrice = parseFloat(priceCell.textContent.replace('$', ''));
-    //                     const newPrice = parseFloat(stock.price);
-    //                     priceCell.textContent = formatCurrency(newPrice);
-    //                     priceCell.style.backgroundColor = newPrice > oldPrice ? '#d4edda' : 
-    //                                                     newPrice < oldPrice ? '#f8d7da' : 'transparent';
-    //                     // setTimeout(() => priceCell.style.backgroundColor = 'transparent', 1000);
-    
-    //                     // Update other fields
-    //                     row.querySelector('.volume').innerHTML = stock.volume;
-    //                     row.querySelector('.market-cap').innerHTML = '$' + formatNumber(stock.market_cap);
-    //                     row.querySelector('.daily-high').innerHTML = formatCurrency(stock.daily_high);
-    //                     row.querySelector('.daily-low').innerHTML = formatCurrency(stock.daily_low);
-    
-    //                     // Update the max quantity in the buy form
-    //                     const quantityInput = row.querySelector('input[name="quantity"]');
-    //                     if (quantityInput) {
-    //                         quantityInput.max = stock.volume;
-    //                     }
-    //                 }
-    //             });
-    //         })
-    //         .catch(error => console.error('Error updating stock data:', error));
-    // }
-    
+       
     function updateStockData() {
-      fetch('/api/stocks')  // You'll need to create this endpoint
+      fetch('/api/stocks')
           .then(response => response.json())
           .then(stocks => {
               stocks.forEach(stock => {

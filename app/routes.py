@@ -65,8 +65,11 @@ def logout_session():
 @login_required
 def view_portfolio():
     if current_user.is_authenticated:
-        user_stocks = get_user_stocks(current_user.get_id())
-        all_stocks = stock.query.all()  # Use the Stock model
+        # Sort user_stocks by ticker
+        user_stocks = get_user_stocks(current_user.get_id()).order_by(stock.ticker).all()
+        
+        # Sort all_stocks by ticker
+        all_stocks = stock.query.order_by(stock.ticker).all()
         transactions = transaction.query.filter_by(user_id=current_user.user_id) \
                                        .order_by(transaction.time_stamp.desc()) \
                                        .limit(10).all()
@@ -90,8 +93,11 @@ def view_portfolio():
 @login_required
 def market():
     if current_user.is_authenticated:
-        user_stocks = get_user_stocks(current_user.get_id())
-        all_stocks = stock.query.all()
+        # user_stocks = get_user_stocks(current_user.get_id())
+        # Fetch and sort user's stocks for the sell section
+        user_stocks = stock.query.join(portfolio).filter(
+            portfolio.user_id == current_user.user_id).order_by(stock.ticker).all()
+        all_stocks = stock.query.order_by(stock.ticker).all()
 
         # Calculate market cap, high, and low for each stock
         for stock_item in all_stocks:
@@ -343,7 +349,7 @@ def administrator():
     holiday_form = HolidayForm()
     holidays = Holiday.query.order_by(Holiday.date).all()
     users = get_all_users()
-    stocks = stock.query.all()
+    stocks = stock.query.order_by(stock.ticker).all()
     market_settings = market_setting.query.first()
     form = AdminCreationForm()
     if not market_settings:

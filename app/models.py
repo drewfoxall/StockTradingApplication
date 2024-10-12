@@ -196,7 +196,7 @@ def delete_user_by_id(user_id):
     return False
 
 def get_all_users():
-    users = user.query.all()
+    users = user.query.order_by(user.user_name).all()
     return users
 
 def get_user_stocks(user_id):
@@ -211,7 +211,7 @@ def get_user_stocks(user_id):
             user_stocks.append(stock_data)  # Append the Stock object directly
         else:
             print(f"Warning: Stock not found for stock_id: {entry.stock_id}")
-    return user_stocks
+    return stock.query.join(portfolio).filter(portfolio.user_id == user_id).order_by(stock.ticker).all()
 
 def is_market_open():
     """Check if the market is currently open"""

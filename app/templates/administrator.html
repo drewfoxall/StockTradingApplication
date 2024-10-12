@@ -204,7 +204,26 @@
                 </div>
             </div>
         </div>
-
+        <h2>Add Stocks</h2>
+        <form method="POST" action="{{ url_for('add_update_stock') }}">
+            <div>
+                <label for="ticker">Ticker:</label>
+                <input type="text" id="ticker" name="ticker" placeholder="Enter stock ticker" required>
+            </div>
+            <div>
+                <label for="company_name">Company Name:</label>
+                <input type="text" id="company_name" name="company_name" placeholder="Enter company name" required>
+            </div>
+            <div>
+                <label for="price">Price:</label>
+                <input type="number" id="price" name="price" placeholder="Enter stock price" step="0.01" required>
+            </div>
+            <div>
+                <label for="volume">Volume:</label>
+                <input type="number" id="volume" name="volume" placeholder="Enter stock quantity" required>
+            </div>
+            <button type="submit">Add/Update Stock</button>
+        </form>
         <h3>Existing Stocks</h3>
         <table>
             <thead>
