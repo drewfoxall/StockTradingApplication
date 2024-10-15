@@ -5,7 +5,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 from app import db, login
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import DECIMAL
+from sqlalchemy import DECIMAL, func
 from decimal import Decimal
 
 bcrypt = Bcrypt()
@@ -201,17 +201,13 @@ def get_all_users():
 
 def get_user_stocks(user_id):
     """
-    Retrieves the stocks owned by a specific user.
+    Retrieves the stocks owned by a specific user, sorted by ticker.
+    Returns a list of tuples: (portfolio_entry, stock).
     """
-    user_stocks = []
-    portfolio_entries = portfolio.query.filter_by(user_id=user_id).all()
-    for entry in portfolio_entries:
-        stock_data = stock.query.get(entry.stock_id)
-        if stock_data:
-            user_stocks.append(stock_data)  # Append the Stock object directly
-        else:
-            print(f"Warning: Stock not found for stock_id: {entry.stock_id}")
-    return stock.query.join(portfolio).filter(portfolio.user_id == user_id).order_by(stock.ticker).all()
+    return db.session.query(portfolio, stock)\
+        .join(stock, portfolio.stock_id == stock.stock_id)\
+        .filter(portfolio.user_id == user_id)\
+        .order_by(func.lower(stock.ticker)).all()
 
 def is_market_open():
     """Check if the market is currently open"""
