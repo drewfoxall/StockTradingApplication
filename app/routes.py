@@ -66,7 +66,8 @@ def logout_session():
 def view_portfolio():
     if current_user.is_authenticated:
         # Sort user_stocks by ticker
-        user_stocks = get_user_stocks(current_user.get_id()).order_by(stock.ticker).all()
+        # user_stocks = get_user_stocks(current_user.get_id()).order_by(stock.ticker).all()
+        user_stocks = sorted(get_user_stocks(current_user.get_id()), key=lambda x: x.ticker)
         
         # Sort all_stocks by ticker
         all_stocks = stock.query.order_by(stock.ticker).all()
