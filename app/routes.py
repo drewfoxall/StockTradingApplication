@@ -214,7 +214,7 @@ def buy_stock(stock_id):
                 db.session.add(new_portfolio_entry)
 
             db.session.commit()
-            flash(f'Successfully purchased {quantity} shares for ${total_cost}', 'success')
+            flash(f'Successfully purchased {quantity} shares for ${total_cost:,.2f}', 'success')
             return redirect(url_for('market'))
 
         except ValueError:
@@ -283,7 +283,7 @@ def sell_stock(stock_id):
             stock_to_sell.volume += quantity  
 
             db.session.commit()
-            flash(f'Successfully sold {quantity} shares of {stock_to_sell.ticker} for ${sale_proceeds:.2f}', 'success')
+            flash(f'Successfully sold {quantity} shares of {stock_to_sell.ticker} for ${sale_proceeds:,.2f}', 'success')
 
         except ValueError:
             flash('Invalid quantity', 'danger')
