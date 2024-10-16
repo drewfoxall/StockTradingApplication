@@ -118,32 +118,32 @@
 
         <h2>Your Stocks</h2>
         {% if user_stocks %}
-        <table class="portfolio-table">
-            <thead>
-                <tr>
-                    <th>Stock</th>
-                    <th>Company</th>
-                    <th>Quantity Owned</th>
-                    <th>Price</th>
-                    <th>Total Value</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in user_stocks %}
-                <tr>
-                    <td>{{ item.ticker }}</td>
-                    <td>{{ item.company_name }}</td>
-                    <td>{{ item.stock_portfolios[0].quantity }}</td>  {# Access using indexing #}
-                    <td>${{ '{:,.2f}'.format(item.price) }}</td>
-                    <td>${{ '{:,.2f}'.format(item.price * item.stock_portfolios[0].quantity) }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-            <tfoot>
-                </tfoot>
-        </table>
+            <table class="portfolio-table">
+                <thead>
+                    <tr>
+                        <th>Stock</th>
+                        <th>Company</th>
+                        <th>Quantity Owned</th>
+                        <th>Price</th>
+                        <th>Total Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for portfolio_entry, stock in user_stocks %}
+                    <tr>
+                        <td>{{ stock.ticker }}</td>
+                        <td>{{ stock.company_name }}</td>
+                        <td>{{ portfolio_entry.quantity }}</td>  {# Access quantity from portfolio_entry #}
+                        <td>${{ '{:,.2f}'.format(stock.price) }}</td>  {# Price comes from stock #}
+                        <td>${{ '{:,.2f}'.format(stock.price * portfolio_entry.quantity) }}</td>  {# Total value = price * quantity #}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         {% else %}
+            <p>You don't own any stocks at the moment.</p>
         {% endif %}
+
         <h2>Transaction History (Last 10 Transactions)</h2>
         <table>
             <thead>
@@ -157,19 +157,18 @@
             </thead>
             <tbody>
                 {% for transaction in transactions %}
-                    <tr>
-                        <td>{{ transaction.stock.ticker }}</td>  
-                        <td>{{ transaction.type }}</td>
-                        <td>{{ transaction.quantity }}</td>
-                        <td>${{ transaction.price }}</td>
-                        <td class="timestamp" data-utc="{{ transaction.time_stamp.strftime('%Y-%m-%d %H:%M:%S') }}">
-                            {{ transaction.time_stamp.strftime('%Y-%m-%d %H:%M:%S') }}
-                        </td>  
-                    </tr>
+                <tr>
+                    <td>{{ transaction.stock.ticker }}</td>  
+                    <td>{{ transaction.type }}</td>
+                    <td>{{ transaction.quantity }}</td>
+                    <td>${{ transaction.price }}</td>
+                    <td class="timestamp" data-utc="{{ transaction.time_stamp.strftime('%Y-%m-%d %H:%M:%S') }}">
+                        {{ transaction.time_stamp.strftime('%Y-%m-%d %H:%M:%S') }}
+                    </td>  
+                </tr>
                 {% endfor %}
             </tbody>
-        </table>
-        
+        </table>      
         <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Convert all timestamps to local time

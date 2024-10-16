@@ -65,39 +65,41 @@ def logout_session():
 @login_required
 def view_portfolio():
     if current_user.is_authenticated:
-        # Sort user_stocks by ticker
-        # user_stocks = get_user_stocks(current_user.get_id()).order_by(stock.ticker).all()
-        user_stocks = sorted(get_user_stocks(current_user.get_id()), key=lambda x: x.ticker)
-        
-        # Sort all_stocks by ticker
-        all_stocks = stock.query.order_by(stock.ticker).all()
-        transactions = transaction.query.filter_by(user_id=current_user.user_id) \
-                                       .order_by(transaction.time_stamp.desc()) \
-                                       .limit(10).all()
+        # Get the current user's stocks sorted by ticker at the database level
+        user_stocks = get_user_stocks(current_user.get_id())
+
+        # Fetch the user's transactions, sorted by the latest timestamp first
+        transactions = transaction.query.filter_by(user_id=current_user.user_id)\
+                                        .order_by(transaction.time_stamp.desc())\
+                                        .limit(10).all()  # Fetch the last 10 transactions
+
+        # Calculate total portfolio value based on stock quantity and price
         total_portfolio_value = 0
-        for stock_item in user_stocks:  # Rename loop variable
-            portfolio_entry = portfolio.query.filter_by(user_id=current_user.user_id, stock_id=stock_item.stock_id).first()
-            if portfolio_entry:
-                total_portfolio_value += stock_item.price * portfolio_entry.quantity  # Use stock_item here
+        for portfolio_entry, stock_details in user_stocks:
+            quantity = portfolio_entry.quantity
+            total_portfolio_value += stock_details.price * quantity
+        
         return render_template('portfolio.html',
-                                user_stocks=user_stocks,
-                                transactions=transactions,
-                                all_stocks=all_stocks,
-                                total_portfolio_value=total_portfolio_value,
-                                is_market_open=is_market_open()
-                                )
+                               user_stocks=user_stocks,
+                               transactions=transactions,
+                               total_portfolio_value=total_portfolio_value,
+                               is_market_open=is_market_open())
     else:
         flash('You need to log in to see your portfolio.', 'warning')
-        return redirect(url_for('view_portfolio'))
+        return redirect(url_for('login'))
 
 @app.route('/market')
 @login_required
 def market():
     if current_user.is_authenticated:
-        # user_stocks = get_user_stocks(current_user.get_id())
-        # Fetch and sort user's stocks for the sell section
-        user_stocks = stock.query.join(portfolio).filter(
-            portfolio.user_id == current_user.user_id).order_by(stock.ticker).all()
+        # Fetch user's stocks (both portfolio and stock data)
+        user_stocks = db.session.query(portfolio, stock)\
+            .join(stock, portfolio.stock_id == stock.stock_id)\
+            .filter(portfolio.user_id == current_user.user_id)\
+            .order_by(stock.ticker)\
+            .all()
+
+        # Fetch all available stocks in the market
         all_stocks = stock.query.order_by(stock.ticker).all()
 
         # Calculate market cap, high, and low for each stock
@@ -107,13 +109,14 @@ def market():
             stock_item.daily_low = stock_item.price
 
         return render_template('market.html',
-            user_stocks=user_stocks,
+            user_stocks=user_stocks,  # Passing both portfolio_entry and stock
             all_stocks=all_stocks,
             is_market_open=is_market_open()
-            )
+        )
     else:
         flash('You need to log in to see the market.', 'warning')
-        return redirect(url_for('market'))
+        return redirect(url_for('login'))
+
 
 @app.route('/update_market_hours', methods=['POST'])
 def update_market_hours():
@@ -211,7 +214,7 @@ def buy_stock(stock_id):
                 db.session.add(new_portfolio_entry)
 
             db.session.commit()
-            flash(f'Successfully purchased {quantity} shares for ${total_cost}', 'success')
+            flash(f'Successfully purchased {quantity} shares for ${total_cost:,.2f}', 'success')
             return redirect(url_for('market'))
 
         except ValueError:
@@ -229,6 +232,7 @@ def sell_stock(stock_id):
     if not is_market_open():
         flash('Market is currently closed', 'danger')
         return redirect(url_for('market'))
+
     if request.method == 'POST':
         try:
             quantity = int(request.form['quantity'])
@@ -236,17 +240,18 @@ def sell_stock(stock_id):
                 flash('Please enter a positive quantity', 'danger')
                 return redirect(url_for('market'))
 
-            # Get the stock and portfolio entry
-            stock_to_sell = stock.query.get_or_404(stock_id)
-            portfolio_entry = portfolio.query.filter_by(
-                user_id=current_user.user_id,
-                stock_id=stock_id
-            ).first()
+            # Fetch user stocks (sorted by ticker in the query)
+            user_stocks = get_user_stocks(current_user.user_id)
 
-            if not portfolio_entry:
+            # Find the specific stock in the user's portfolio
+            stock_to_sell = next((s for p, s in user_stocks if s.stock_id == stock_id), None)
+            portfolio_entry = next((p for p, s in user_stocks if s.stock_id == stock_id), None)
+
+            if not stock_to_sell or not portfolio_entry:
                 flash('You do not own this stock', 'danger')
                 return redirect(url_for('market'))
 
+            # Check if the user has enough shares to sell
             if portfolio_entry.quantity < quantity:
                 flash('You do not own enough shares to sell', 'danger')
                 return redirect(url_for('market'))
@@ -254,12 +259,12 @@ def sell_stock(stock_id):
             # Calculate sale proceeds
             sale_proceeds = quantity * stock_to_sell.price
 
-            # Update portfolio (Corrected lines)
+            # Update portfolio
             portfolio_entry.quantity -= quantity
+            
+            # If the quantity is zero, prepare to delete the portfolio entry
             if portfolio_entry.quantity == 0:
                 db.session.delete(portfolio_entry)
-            else:
-                db.session.add(portfolio_entry)  # Add this line to track changes
 
             # Update user's cash balance
             current_user.cash_balance += sale_proceeds
@@ -278,7 +283,7 @@ def sell_stock(stock_id):
             stock_to_sell.volume += quantity  
 
             db.session.commit()
-            flash(f'Successfully sold {quantity} shares for ${sale_proceeds}', 'success')
+            flash(f'Successfully sold {quantity} shares of {stock_to_sell.ticker} for ${sale_proceeds:,.2f}', 'success')
 
         except ValueError:
             flash('Invalid quantity', 'danger')
