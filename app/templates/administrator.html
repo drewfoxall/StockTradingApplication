@@ -115,13 +115,13 @@
             </div>
             <button type="submit">Update Hours</button>
         </form>
-        <div class="card mb-4">
+        <!-- <div class="card mb-4">
             <div class="card-header">
                 <h3 class="card-title mb-0">Holiday Management</h3>
             </div>
-            <div class="card-body">
+            <div class="card-body"> -->
                 <!-- Add Holiday Form -->
-                <div class="row mb-4">
+                <!-- <div class="row mb-4">
                     <div class="col-12">
                         <h4>Add New Holiday</h4>
                         <form method="POST" action="{{ url_for('manage_holidays') }}" class="row g-3">
@@ -161,9 +161,9 @@
                         </form>
                     </div>
                 </div>
-        
+         -->
                 <!-- Holiday List -->
-                <div class="row">
+                <!-- <div class="row">
                     <div class="col-12">
                         <h4>Current Holidays</h4>
                         <div class="table-responsive">
@@ -223,7 +223,7 @@
                 <input type="number" id="volume" name="volume" placeholder="Enter stock quantity" required>
             </div>
             <button type="submit">Add/Update Stock</button>
-        </form>
+        </form> -->
         <h3>Existing Stocks</h3>
         <table>
             <thead>
@@ -260,8 +260,8 @@
             </tbody>
         </table>
         {% block content %}
-        <h1>User Admin</h1>
-        <h2>Create User</h2>
+        <!-- <h1>User Admin</h1> -->
+        <!-- <h2>Create User</h2>
         <form method="POST" action="{{ url_for('create_user') }}">
             {{ form.hidden_tag() }}
             <div>
@@ -318,7 +318,7 @@
                 {% endfor %}
             </tbody>
         </table>
-    </div>
+    </div> -->
 
     <footer class="footer">
         Stock Trading Program created by Andrew Foxall, Ken Lai, and Sam Nhean
