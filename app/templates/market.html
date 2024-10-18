@@ -23,7 +23,6 @@
         {% if current_user.is_authenticated %}
           <!-- Show Sign Out link when the user is logged in -->
           <a href="{{ url_for('logout') }}"> Sign Out </a>
-          
         {% else %}
           <!-- Show Log in and Sign Up links when the user is not logged in -->
           <a href="{{ url_for('login') }}"> Log In </a>
@@ -50,24 +49,23 @@
           </ul>
       {% endif %}
       {% endwith %}
-      <!DOCTYPE html>
-  <div class="buy-sell-container">
-    <h3>Your cash balance: ${{ "{:,.2f}".format(current_user.cash_balance) }}</h3>
-    <h2>Buy Stocks</h2>
-    <table id="stock-table">
-      <thead>  
-        <tr>
-            <th>Stock Symbol</th>
-            <th>Stock Name</th>
-            <th>Current Price</th>
-            <th>Percent Change</th> 
-            <th>Available Volume</th>
-             <th>Market Cap</th>  
-            <th>High</th>  
-            <th>Low</th>   
-            <th>Action</th>
-        </tr>
-      </thead>
+      
+      <h3>Your cash balance: ${{ "{:,.2f}".format(current_user.cash_balance) }}</h3>
+      <h2>Buy Stocks</h2>
+      <table id="stock-table">
+        <thead>  
+          <tr>
+              <th>Stock Symbol</th>
+              <th>Stock Name</th>
+              <th>Current Price</th>
+              <th>Percent Change</th> 
+              <th>Available Volume</th>
+              <th>Market Cap</th>  
+              <th>High</th>  
+              <th>Low</th>   
+              <th>Action</th>
+          </tr>
+        </thead>
         <tbody>
         {% for stock_item in all_stocks %}
         <tr data-stock-id="{{ stock_item.stock_id }}">
@@ -90,94 +88,28 @@
             </td>
         </tr>
         {% endfor %}
-      </tbody>
-    </table>
-    
-    <script>
-    // Function to format number as currency
-    function formatCurrency(number) {
-        return '$' + parseFloat(number).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    }
-
-    
-    // Function to format number with commas
-    function formatNumber(number) {
-        return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    }
-       
-    function updateStockData() {
-      fetch('/api/stocks')
-          .then(response => response.json())
-          .then(stocks => {
-              stocks.forEach(stock => {
-                  const row = document.querySelector(`tr[data-stock-id="${stock.stock_id}"]`);
-                  if (row) {
-                      // Update price with color animation
-                      const priceCell = row.querySelector('.price');
-                      const oldPrice = parseFloat(priceCell.textContent.replace('$', ''));
-                      const newPrice = parseFloat(stock.price);
-                      priceCell.textContent = formatCurrency(newPrice);
-                      priceCell.style.backgroundColor = newPrice > oldPrice ? '#d4edda' : 
-                                                      newPrice < oldPrice ? '#f8d7da' : 'transparent';
-                      
-                      // Calculate percent change
-                      const percentChange = ((newPrice - oldPrice) / oldPrice * 100).toFixed(2);
-                      const arrow = newPrice > oldPrice ? '↑' : newPrice < oldPrice ? '↓' : '';
-                      const percentChangeCell = row.querySelector('.percent-change');
-                      percentChangeCell.innerHTML = `${arrow} ${percentChange}%`;
-
-                      // Update other fields
-                      row.querySelector('.volume').innerHTML = stock.volume;
-                      row.querySelector('.market-cap').innerHTML = '$' + formatNumber(stock.market_cap);
-                      row.querySelector('.daily-high').innerHTML = formatCurrency(stock.daily_high);
-                      row.querySelector('.daily-low').innerHTML = formatCurrency(stock.daily_low);
-
-                      // Update the max quantity in the buy form
-                      const quantityInput = row.querySelector('input[name="quantity"]');
-                      if (quantityInput) {
-                          quantityInput.max = stock.volume;
-                      }
-                  }
-              });
-          })
-          .catch(error => console.error('Error updating stock data:', error));
-    }
-
-    // Update stock data every 30 seconds
-    setInterval(updateStockData, 30000);
-    
-    // Initial update
-    updateStockData();
-    
-    // Handle buy form submissions
-    document.querySelectorAll('[id^="buy-form-"]').forEach(form => {
-        form.addEventListener('submit', function(event) {
-            event.preventDefault();
-            if (confirm('Are you sure you want to buy this stock?')) {
-                this.submit();
-            }
-        });
-    });
-    </script>
-    <h2>Sell Stocks</h2>
-    {% if user_stocks %}
-        <table>
+        </tbody>
+      </table>
+      
+      <h2>Sell Stocks</h2>
+      {% if user_stocks %}
+        <table id="sell-stock-table">
             <thead>
                 <tr>
                     <th>Ticker</th>
                     <th>Company Name</th>
                     <th>Quantity Owned</th>
-                    <th>Price</th>
+                    <th>Sell Price</th>
                     <th>Sell</th>
                 </tr>
             </thead>
             <tbody>
                 {% for portfolio_entry, stock in user_stocks %}
-                <tr>
+                <tr data-stock-id="{{ stock.stock_id }}">
                     <td>{{ stock.ticker }}</td>
                     <td>{{ stock.company_name }}</td>
                     <td>{{ portfolio_entry.quantity }}</td> <!-- Quantity from portfolio_entry -->
-                    <td>${{ '{:,.2f}'.format(stock.price) }}</td> <!-- Stock price -->
+                    <td class="price">${{ '{:,.2f}'.format(stock.price) }}</td> <!-- Stock price -->
                     <td>
                         <form 
                           id="sell-form-{{ stock.stock_id }}"  
@@ -186,22 +118,95 @@
                             <input type="number" name="quantity" min="1" max="{{ portfolio_entry.quantity }}" placeholder="Quantity" required />
                             <button type="submit" class="btn">Sell</button>
                         </form>
-                        <script>
-                            document.getElementById('sell-form-{{ stock.stock_id }}').addEventListener('submit', function(event) {
-                                event.preventDefault(); // Prevent default submission
-                                if (confirm('Are you sure you want to sell this stock?')) {
-                                    this.submit(); // Submit the form if confirmed
-                                }
-                            });
-                        </script>
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
-    {% else %}
+      {% else %}
         <p>You don't own any stocks to sell.</p>
-    {% endif %}   
-  </div>
-</body>
+      {% endif %}
+    </div>
+    
+    <script>
+    // Function to format number as currency
+    function formatCurrency(number) {
+        return '$' + parseFloat(number).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    
+    // Function to format number with commas
+    function formatNumber(number) {
+        return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    }
+
+    function updateStockData() {
+      fetch('/api/stocks')
+          .then(response => response.json())
+          .then(stocks => {
+              stocks.forEach(stock => {
+                  // Update the buy table
+                  const buyRow = document.querySelector(`#stock-table tr[data-stock-id="${stock.stock_id}"]`);
+                  if (buyRow) {
+                      updateRow(buyRow, stock, true);  // true for buy section
+                  }
+
+                  // Update the sell table
+                  const sellRow = document.querySelector(`#sell-stock-table tr[data-stock-id="${stock.stock_id}"]`);
+                  if (sellRow) {
+                      updateRow(sellRow, stock, false);  // false for sell section
+                  }
+              });
+          })
+          .catch(error => console.error('Error updating stock data:', error));
+    }
+
+    function updateRow(row, stock, isBuySection) {
+        // Update price with color animation
+        const priceCell = row.querySelector('.price');
+        const oldPrice = parseFloat(priceCell.textContent.replace('$', ''));
+        const newPrice = parseFloat(stock.price);
+        priceCell.textContent = formatCurrency(newPrice);
+        priceCell.style.backgroundColor = newPrice > oldPrice ? '#d4edda' : 
+                                          newPrice < oldPrice ? '#f8d7da' : 'transparent';
+
+        // If it's the Buy section, update percent change
+        if (isBuySection) {
+            const percentChangeCell = row.querySelector('.percent-change');
+            if (oldPrice) {
+                const percentChange = ((newPrice - oldPrice) / oldPrice * 100).toFixed(2);
+                const arrow = newPrice > oldPrice ? '↑' : newPrice < oldPrice ? '↓' : '';
+
+                // Set the percent change value with arrow
+                percentChangeCell.innerHTML = `${arrow} ${percentChange}%`;
+
+                // Set color: green for increase, red for decrease
+                if (newPrice > oldPrice) {
+                    percentChangeCell.style.color = 'green';  // green for increase
+                } else if (newPrice < oldPrice) {
+                    percentChangeCell.style.color = 'red';    // red for decrease
+                } else {
+                    percentChangeCell.style.color = 'black';  // neutral if no change
+                }
+            }
+        }
+    }
+
+    // Update stock data every 30 seconds
+    setInterval(updateStockData, 30000);
+    
+    // Initial update
+    updateStockData();
+    
+    // Handle buy and sell form submissions
+    document.querySelectorAll('[id^="buy-form-"], [id^="sell-form-"]').forEach(form => {
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+            const action = form.id.startsWith('buy-form') ? 'buy' : 'sell';
+            if (confirm(`Are you sure you want to ${action} this stock?`)) {
+                this.submit();
+            }
+        });
+    });
+    </script>
+  </body>
 </html>

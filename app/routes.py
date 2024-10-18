@@ -257,7 +257,7 @@ def sell_stock(stock_id):
                 return redirect(url_for('market'))
 
             # Calculate sale proceeds
-            sale_proceeds = quantity * stock_to_sell.sell_price
+            sale_proceeds = quantity * stock_to_sell.price
 
             # Update portfolio
             portfolio_entry.quantity -= quantity
@@ -308,12 +308,9 @@ def deposit_cash():
 def withdraw_cash():
     if request.method == 'POST':
         amount = Decimal(request.form['amount'])
-        if amount < current_user.cash_balance:
-            current_user.cash_balance -= amount
-            db.session.commit()
-            flash('Cash withdrawn successfully!', 'success')
-        else:
-            flash('You have insufficient funds to withdraw.')
+        current_user.cash_balance -= amount
+        db.session.commit()
+        flash('Cash withdrawn successfully!', 'success')
     return redirect(url_for('view_portfolio'))
 
 @app.route('/logout')
