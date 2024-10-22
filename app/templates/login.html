@@ -46,41 +46,38 @@
           {% endif %} {% endwith %}
           <form action="{{ url_for('login') }}" method="POST">
             {{ form.hidden_tag() }}
-            <!-- This generates the CSRF token -->
             <h1>Login</h1>
             <div class="input-box">
-              <input
-                type="text"
-                name="username"
-                placeholder="Username"
-                required
-              />
+                {{ form.username(placeholder="Username", class="form-control", autofocus=true, id="username-input") }}
             </div>
             <div class="input-box">
-              <input
-                type="password"
-                name="password"
-                placeholder="Password"
-                required
-              />
+                {{ form.password(placeholder="Password", class="form-control") }}
             </div>
             <div class="remember-forgot">
-              <label>
-                <input type="checkbox" name="remember_me" /> Remember me</label>
-              <a href="#">Forgot Password?</a>
+                <label>
+                    {{ form.remember_me() }} Remember me
+                </label>
+                <a href="#">Forgot Password?</a>
             </div>
             <button type="submit" class="btn">Login</button>
             <div class="register-link"></div>
             <p class="register">
-              Don't have an account?
-              <a href="{{ url_for('signup') }}">Register</a>
+                Don't have an account?
+                <a href="{{ url_for('signup') }}">Register</a>
             </p>
-          </form>
+        </form>
         </div>
       </div>
     </div>
     <footer class="footer">
       Stock Trading Program created by Andrew Foxall, Ken Lai, and Sam Nhean
     </footer>
+    <script>
+      window.onload = function() {
+        setTimeout(function() {
+          document.getElementById('username').focus();
+        }, 100);  // 100 milliseconds delay
+      };
+    </script>       
   </body>
 </html>
